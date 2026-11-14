@@ -1,0 +1,29 @@
+{
+  "trained_at": "2026-11-14T08:09:57.983106Z",
+  "dataset_size": 2800,
+  "features": [
+    "crop_type",
+    "nitrogen",
+    "phosphorus",
+    "potassium",
+    "ph",
+    "rainfall"
+  ],
+  "models_evaluated": {
+    "Polynomial Ridge Regression": {
+      "test_r2": 0.9193,
+      "test_rmse": 0.6638,
+      "test_mae": 0.4962,
+      "cv_mean_r2": 0.9214,
+      "cv_std_r2": 0.0067
+    },
+    "Support Vector Regression (RBF)": {
+      "test_r2": 0.9829,
+      "test_rmse": 0.3052,
+      "test_mae": 0.2413,
+      "cv_mean_r2": 0.9847,
+      "cv_std_r2": 0.0009
+    }
+  },
+  "selected_model": "Support Vector Regression (RBF)"
+}
