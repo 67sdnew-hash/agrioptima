@@ -1,18 +1,39 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Dashboard — AgriOptima Fertilizer Optimizer{% endblock %}
+{% block title %}AgriOptima 3D — Precision Crop Yield & Fertilizer Optimizer{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
-    <div>
-        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Prescriptive Fertilizer Optimizer</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Input baseline soil metrics and target yield to compute optimal non-negative nutrient supplements via SciPy SLSQP.</p>
+    <!-- Header Hero Banner with 3D Badge -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl glass-card relative overflow-hidden" data-tilt>
+        <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 mb-3">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>Real-Time Agronomic Optimization Engine</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Prescriptive Fertilizer Optimizer <span class="text-emerald-600 dark:text-emerald-400">3D</span>
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Experience precision agriculture through interactive 3D soil modeling. Compute mathematically minimal supplemental fertilizer ($\Delta N, \Delta P, \Delta K$) to guarantee target yield while preventing environmental run-off.
+            </p>
+        </div>
+        <div class="hidden md:flex items-center space-x-3 relative z-10">
+            <div class="text-right">
+                <span class="text-xs uppercase font-bold text-slate-400 block tracking-wider">Active Solver</span>
+                <span class="text-sm font-bold text-slate-800 dark:text-slate-200">SciPy SLSQP + SVR (RBF)</span>
+            </div>
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl shadow-inner border border-emerald-200/50 dark:border-emerald-800/50">
+                ⚡
+            </div>
+        </div>
     </div>
 
     <!-- Infeasibility Banner -->
     {% if latest_result and not latest_result.is_feasible %}
-    <div class="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 flex items-start space-x-3">
-        <span class="text-xl">⚠️</span>
+    <div class="p-5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 flex items-start space-x-3 shadow-sm backdrop-blur-md" data-tilt>
+        <span class="text-2xl">⚠️</span>
         <div>
             <h3 class="text-sm font-bold text-amber-900 dark:text-amber-200">Biological Yield Ceiling Reached</h3>
             <p class="text-xs text-amber-800 dark:text-amber-300 mt-1">{{ latest_result.infeasibility_note }}</p>
@@ -21,50 +42,63 @@
     {% endif %}
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <!-- Input Form (5 Cols) -->
-        <div class="lg:col-span-5 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h2 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Soil & Target Parameters</h2>
+        <!-- Input Form (5 Cols) with 3D Tilt Card -->
+        <div class="lg:col-span-5 glass-card p-6 sm:p-7 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 relative" data-tilt>
+            <div class="flex items-center justify-between mb-5">
+                <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                    <span>Soil & Target Parameters</span>
+                </h2>
+                <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60">
+                    Live Inputs
+                </span>
+            </div>
+
             <form method="POST" class="space-y-4">
                 {% csrf_token %}
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Crop Type</label>
-                    {{ form.crop_type }}
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">Crop Selection</label>
+                    <div class="relative">
+                        {{ form.crop_type }}
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-3">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Soil N (kg/ha)</label>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Soil N (kg/ha)</label>
                         {{ form.current_nitrogen }}
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Soil P (kg/ha)</label>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Soil P (kg/ha)</label>
                         {{ form.current_phosphorus }}
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Soil K (kg/ha)</label>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Soil K (kg/ha)</label>
                         {{ form.current_potassium }}
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Soil pH (3.5 - 9.5)</label>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Soil pH (3.5 - 9.5)</label>
                         {{ form.soil_ph }}
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">Rainfall (mm)</label>
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Rainfall (mm)</label>
                         {{ form.rainfall }}
                     </div>
                 </div>
 
-                <div class="pt-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1">Target Yield (Tons / Hectare) *</label>
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-1.5 flex items-center justify-between">
+                        <span>Target Yield (Tons / Hectare)</span>
+                        <span class="text-[10px] text-slate-400 font-normal">Farmer Desired Baseline</span>
+                    </label>
                     {{ form.target_yield }}
                 </div>
 
-                <button type="submit" class="w-full mt-4 h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center justify-center space-x-2">
-                    <span>Compute Prescriptive Recipe</span>
-                    <span>⚡</span>
+                <button type="submit" class="w-full mt-4 h-12 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white font-bold text-sm rounded-2xl shadow-lg shadow-emerald-600/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2">
+                    <span>Compute Prescriptive 3D Recipe</span>
+                    <span class="text-base">⚡</span>
                 </button>
             </form>
         </div>
@@ -72,70 +106,102 @@
         <!-- Output Results (7 Cols) -->
         <div class="lg:col-span-7 space-y-6">
             {% if latest_result %}
-            <!-- Top Metric Cards -->
+            <!-- Top Metric Cards with 3D Depth -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Baseline Yield</p>
-                    <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ latest_result.baseline_yield }} <span class="text-xs font-medium text-slate-500">t/ha</span></p>
+                <div class="p-4 glass-card rounded-2xl relative overflow-hidden" data-tilt>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Baseline Yield</p>
+                    <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">{{ latest_result.baseline_yield }} <span class="text-xs font-semibold text-slate-400">t/ha</span></p>
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-300 dark:bg-slate-700"></div>
                 </div>
-                <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Predicted Yield</p>
-                    <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{{ latest_result.predicted_yield }} <span class="text-xs font-medium text-slate-500">t/ha</span></p>
+                <div class="p-4 glass-card rounded-2xl relative overflow-hidden" data-tilt>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Predicted Yield</p>
+                    <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">{{ latest_result.predicted_yield }} <span class="text-xs font-semibold text-emerald-400/80">t/ha</span></p>
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
                 </div>
-                <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Total Fertilizer</p>
-                    <p class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ latest_result.total_fertilizer_kg }} <span class="text-xs font-medium text-slate-500">kg/ha</span></p>
+                <div class="p-4 glass-card rounded-2xl relative overflow-hidden" data-tilt>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Fertilizer</p>
+                    <p class="text-2xl font-black text-slate-800 dark:text-white mt-1">{{ latest_result.total_fertilizer_kg }} <span class="text-xs font-semibold text-slate-400">kg/ha</span></p>
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-indigo-500"></div>
                 </div>
-                <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Cost Savings</p>
-                    <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">${{ latest_result.cost_savings }} <span class="text-xs font-medium text-slate-500">({{ latest_result.percent_savings }}%)</span></p>
+                <div class="p-4 glass-card rounded-2xl relative overflow-hidden" data-tilt>
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Cost Savings</p>
+                    <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">${{ latest_result.cost_savings }} <span class="text-[11px] font-bold text-emerald-500 block">({{ latest_result.percent_savings }}% saved)</span></p>
+                    <div class="absolute bottom-0 left-0 right-0 h-1 bg-amber-500"></div>
                 </div>
             </div>
 
-            <!-- Prescribed Recipe Breakdown -->
-            <div class="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">Prescribed Fertilizer Application ($\Delta N, \Delta P, \Delta K$)</h3>
+            <!-- Prescribed Recipe Breakdown with 3D Nutrient Orbs -->
+            <div class="p-6 glass-card rounded-3xl" data-tilt>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">Prescribed Fertilizer Application ($\Delta N, \Delta P, \Delta K$)</h3>
+                    <span class="text-xs text-slate-400 font-medium">SLSQP Optimal Minimal Doses</span>
+                </div>
                 <div class="grid grid-cols-3 gap-4 text-center">
-                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                        <span class="text-xs font-semibold uppercase text-slate-500">Add Nitrogen ($\Delta N$)</span>
-                        <p class="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2">+{{ latest_result.delta_nitrogen }}</p>
-                        <span class="text-xs text-slate-400">kg/ha</span>
+                    <div class="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/60 shadow-sm transform hover:-translate-y-1 transition-all">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300">Add Nitrogen ($\Delta N$)</span>
+                        <p class="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-2">+{{ latest_result.delta_nitrogen }}</p>
+                        <span class="text-xs text-indigo-500/80 font-semibold">kg / ha</span>
                     </div>
-                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                        <span class="text-xs font-semibold uppercase text-slate-500">Add Phosphorus ($\Delta P$)</span>
-                        <p class="text-3xl font-extrabold text-amber-600 dark:text-amber-400 mt-2">+{{ latest_result.delta_phosphorus }}</p>
-                        <span class="text-xs text-slate-400">kg/ha</span>
+                    <div class="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 shadow-sm transform hover:-translate-y-1 transition-all">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">Add Phosphorus ($\Delta P$)</span>
+                        <p class="text-3xl font-black text-amber-600 dark:text-amber-400 mt-2">+{{ latest_result.delta_phosphorus }}</p>
+                        <span class="text-xs text-amber-500/80 font-semibold">kg / ha</span>
                     </div>
-                    <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                        <span class="text-xs font-semibold uppercase text-slate-500">Add Potassium ($\Delta K$)</span>
-                        <p class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">+{{ latest_result.delta_potassium }}</p>
-                        <span class="text-xs text-slate-400">kg/ha</span>
+                    <div class="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 shadow-sm transform hover:-translate-y-1 transition-all">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Add Potassium ($\Delta K$)</span>
+                        <p class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-2">+{{ latest_result.delta_potassium }}</p>
+                        <span class="text-xs text-emerald-500/80 font-semibold">kg / ha</span>
                     </div>
                 </div>
 
-                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between text-xs text-slate-500">
-                    <span>Optimized Cost: <strong>${{ latest_result.optimized_cost }}/ha</strong></span>
-                    <span>Standard Blanket Cost: <strong>${{ latest_result.blanket_cost }}/ha</strong></span>
+                <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row justify-between text-xs text-slate-500 gap-2">
+                    <span>Prescription Cost: <strong class="text-slate-900 dark:text-white">${{ latest_result.optimized_cost }}/ha</strong></span>
+                    <span>Conventional Blanket Cost: <strong class="text-slate-900 dark:text-white">${{ latest_result.blanket_cost }}/ha</strong></span>
                 </div>
             </div>
 
-            <!-- Chart.js Response Curves -->
-            <div class="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                <h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Nitrogen Marginal Yield Response Curve</h3>
-                <p class="text-xs text-slate-500 mb-4">Diminishing returns response curve with farmer's baseline and optimal operating points.</p>
+            <!-- Chart.js Response Curves with Multi-Nutrient Switcher -->
+            <div class="p-6 glass-card rounded-3xl" data-tilt>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white" id="curveTitle">Nitrogen Marginal Yield Response Curve</h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Diminishing returns response curve comparing current baseline and optimal point.</p>
+                    </div>
+                    <!-- Nutrient Curve Switcher Buttons -->
+                    <div class="inline-flex p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl text-xs font-bold">
+                        <button type="button" id="btnN" onclick="switchCurve('nitrogen')" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition">Nitrogen (N)</button>
+                        <button type="button" id="btnP" onclick="switchCurve('phosphorus')" class="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition">Phosphorus (P)</button>
+                        <button type="button" id="btnK" onclick="switchCurve('potassium')" class="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition">Potassium (K)</button>
+                    </div>
+                </div>
                 <div class="h-64">
                     <canvas id="responseCurveChart"></canvas>
                 </div>
             </div>
 
-            {% else %}
-            <!-- Empty Placeholder -->
-            <div class="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
-                <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-600 flex items-center justify-center text-xl mx-auto mb-3">
-                    🧪
+            <!-- Interactive 3D Soil Digital Twin Visualizer -->
+            <div class="p-6 glass-card rounded-3xl" data-tilt>
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">🌐</span>
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">Interactive 3D Soil Nutrient Digital Twin</h3>
+                    </div>
+                    <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Touch / Hover Cursor to Rotate 3D Field</span>
                 </div>
-                <h3 class="text-base font-bold text-slate-900 dark:text-white">Ready to Optimize</h3>
-                <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">Configure your soil measurements and target yield on the left to compute the mathematically minimal fertilizer prescription.</p>
+                <div id="soil3DCanvasContainer"></div>
+            </div>
+
+            {% else %}
+            <!-- Empty Placeholder with Interactive 3D Soil Canvas -->
+            <div class="p-6 sm:p-8 text-center glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 relative" data-tilt>
+                <div class="mb-4">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                        <span>Interactive 3D Field Simulation Active</span>
+                    </div>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">Ready for 3D Agronomic Optimization</h3>
+                <p class="text-xs text-slate-400 max-w-md mx-auto mt-1 mb-6">Move your cursor over the 3D soil topography below to explore the digital twin, or configure soil metrics on the left to calculate your recipe.</p>
+                <div id="soil3DCanvasContainer"></div>
             </div>
             {% endif %}
         </div>
@@ -144,47 +210,101 @@
 {% endblock %}
 
 {% block extra_scripts %}
-{% if response_curves_json %}
+<script src="{% static 'js/soil_3d_terrain.js' %}"></script>
 <script>
+    // Initialize 3D Soil Digital Twin Scene
+    document.addEventListener('DOMContentLoaded', function () {
+        initSoil3DField('soil3DCanvasContainer');
+    });
+
+    {% if response_curves_json %}
     const curveData = JSON.parse('{{ response_curves_json|escapejs }}');
     const ctx = document.getElementById('responseCurveChart').getContext('2d');
+    let chartInstance = null;
 
-    const nLabels = curveData.nitrogen_curve.labels;
-    const nYields = curveData.nitrogen_curve.yields;
-    const currentX = curveData.nitrogen_curve.current_x;
-    const optimalX = curveData.nitrogen_curve.optimal_x;
+    function renderCurve(nutrientKey, color, labelText) {
+        const curve = curveData[nutrientKey + '_curve'];
+        const labels = curve.labels;
+        const yields = curve.yields;
+        const currentX = curve.current_x;
+        const optimalX = curve.optimal_x;
 
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: nLabels,
-            datasets: [{
-                label: 'Yield (tons/ha) vs. Total Nitrogen (kg/ha)',
-                data: nYields,
-                borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                borderWidth: 2.5,
-                fill: true,
-                tension: 0.35,
-                pointRadius: nLabels.map(val => (val === currentX || val === optimalX) ? 6 : 2),
-                pointBackgroundColor: nLabels.map(val => val === optimalX ? '#059669' : (val === currentX ? '#ef4444' : '#10b981'))
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                x: {
-                    title: { display: true, text: 'Total Nitrogen in Soil (kg/ha)' },
-                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: `Yield (t/ha) vs. ${labelText}`,
+                    data: yields,
+                    borderColor: color,
+                    backgroundColor: color.replace('1)', '0.12)'),
+                    borderWidth: 2.8,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: labels.map(val => (val === currentX || val === optimalX) ? 6 : 2),
+                    pointBackgroundColor: labels.map(val => val === optimalX ? '#059669' : (val === currentX ? '#ef4444' : color))
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#94a3b8',
+                            font: { family: 'inherit', size: 11, weight: 'bold' }
+                        }
+                    }
                 },
-                y: {
-                    title: { display: true, text: 'Yield (tons/ha)' },
-                    grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                scales: {
+                    x: {
+                        title: { display: true, text: `Total ${labelText} (kg/ha)`, color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.08)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Expected Yield (tons/ha)', color: '#94a3b8' },
+                        grid: { color: 'rgba(148, 163, 184, 0.08)' },
+                        ticks: { color: '#94a3b8' }
+                    }
                 }
             }
+        });
+    }
+
+    function switchCurve(nutrient) {
+        const btnN = document.getElementById('btnN');
+        const btnP = document.getElementById('btnP');
+        const btnK = document.getElementById('btnK');
+        const title = document.getElementById('curveTitle');
+
+        [btnN, btnP, btnK].forEach(b => {
+            b.className = 'px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white transition';
+        });
+
+        const activeClass = 'px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition font-bold';
+
+        if (nutrient === 'nitrogen') {
+            btnN.className = activeClass;
+            title.textContent = 'Nitrogen Marginal Yield Response Curve';
+            renderCurve('nitrogen', 'rgba(99, 102, 241, 1)', 'Nitrogen in Soil');
+        } else if (nutrient === 'phosphorus') {
+            btnP.className = activeClass;
+            title.textContent = 'Phosphorus Marginal Yield Response Curve';
+            renderCurve('phosphorus', 'rgba(217, 119, 6, 1)', 'Phosphorus in Soil');
+        } else if (nutrient === 'potassium') {
+            btnK.className = activeClass;
+            title.textContent = 'Potassium Marginal Yield Response Curve';
+            renderCurve('potassium', 'rgba(16, 185, 129, 1)', 'Potassium in Soil');
         }
-    });
+    }
+
+    // Default to Nitrogen curve
+    renderCurve('nitrogen', 'rgba(99, 102, 241, 1)', 'Nitrogen in Soil');
+    {% endif %}
 </script>
-{% endif %}
 {% endblock %}

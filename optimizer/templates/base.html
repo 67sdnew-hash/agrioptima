@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
@@ -12,6 +13,19 @@
             theme: {
                 extend: {
                     colors: {
+                        sage: {
+                            50: '#f6f8f6',
+                            100: '#e7ede8',
+                            200: '#d0ddd2',
+                            300: '#abc3b0',
+                            400: '#84a98c',
+                            500: '#648e6f',
+                            600: '#52796f',
+                            700: '#416159',
+                            800: '#354f52',
+                            900: '#2f3e46',
+                            950: '#1a2429'
+                        },
                         emerald: {
                             50: '#ecfdf5',
                             500: '#10b981',
@@ -24,27 +38,34 @@
             }
         }
     </script>
+    <!-- Three.js CDN for 3D Field Topography -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom 3D & Cursor Styles -->
+    <link rel="stylesheet" href="{% static 'css/custom_3d.css' %}">
 </head>
-<body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased">
-    <!-- Navbar -->
-    <header class="h-16 border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-30">
+<body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white">
+    <!-- Navbar with Soft Glassmorphic Blur -->
+    <header class="h-16 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-30 transition-all">
         <div class="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
-            <a href="{% url 'dashboard' %}" class="flex items-center space-x-2.5">
-                <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm shadow-emerald-500/20">
+            <a href="{% url 'dashboard' %}" class="flex items-center space-x-3 group" data-tilt>
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sage-800 via-emerald-600 to-teal-400 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-emerald-500/20 transform group-hover:scale-105 transition-transform">
                     🌱
                 </div>
                 <div>
-                    <span class="text-lg font-black tracking-tight text-slate-900 dark:text-white">AgriOptima</span>
-                    <span class="hidden sm:inline-block ml-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Prescriptive ML</span>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-lg font-black tracking-tight text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">AgriOptima</span>
+                        <span class="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">3D Precision</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 -mt-0.5">Crop Yield & Prescriptive Fertilizer Optimizer</p>
                 </div>
             </a>
 
-            <nav class="flex items-center space-x-1 sm:space-x-3">
-                <a href="{% url 'dashboard' %}" class="px-3.5 py-2 text-sm font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Optimizer</a>
-                <a href="{% url 'history' %}" class="px-3.5 py-2 text-sm font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">History Log</a>
-                <a href="{% url 'research' %}" class="px-3.5 py-2 text-sm font-semibold rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Model Research</a>
+            <nav class="flex items-center space-x-1 sm:space-x-2">
+                <a href="{% url 'dashboard' %}" class="px-3.5 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">Optimizer 3D</a>
+                <a href="{% url 'history' %}" class="px-3.5 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">History Log</a>
+                <a href="{% url 'research' %}" class="px-3.5 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">Methodology</a>
             </nav>
         </div>
     </header>
@@ -53,7 +74,7 @@
     {% if messages %}
     <div class="max-w-7xl mx-auto w-full px-6 pt-4">
         {% for message in messages %}
-        <div class="p-4 rounded-xl text-sm font-medium {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200 dark:bg-red-950/50 dark:text-red-300{% else %}bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300{% endif %}">
+        <div class="p-4 rounded-2xl text-sm font-medium {% if message.tags == 'error' %}bg-rose-50/90 text-rose-800 border border-rose-200 dark:bg-rose-950/50 dark:text-rose-300{% else %}bg-emerald-50/90 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300{% endif %} shadow-sm backdrop-blur-md">
             {{ message }}
         </div>
         {% endfor %}
@@ -61,15 +82,17 @@
     {% endif %}
 
     <!-- Main Content Area -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 sm:p-8">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="py-6 border-t border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500">
-        AgriOptima Production Engine • SciPy SLSQP Optimization + scikit-learn SVR • Deployed Live on Render
+    <footer class="py-6 border-t border-slate-200 dark:border-slate-800/80 text-center text-xs text-slate-400">
+        <p>AgriOptima Production Engine • SciPy SLSQP Optimization + scikit-learn SVR • Three.js 3D Soil Digital Twin</p>
     </footer>
 
+    <!-- Interactive Touch/Cursor Engine -->
+    <script src="{% static 'js/cursor_and_tilt.js' %}"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>
