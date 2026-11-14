@@ -138,6 +138,7 @@ def multi_zone_view(request):
     return render(request, 'optimizer/multi_zone.html', context)
 
 
+@csrf_exempt
 @require_POST
 def optimize_zone_api_view(request):
     """
