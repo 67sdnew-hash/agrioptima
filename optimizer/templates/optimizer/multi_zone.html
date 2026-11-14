@@ -35,10 +35,14 @@
                 <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                     <span>Field Location & Topography</span>
                 </h3>
-                <button type="button" id="btnLocateFarm" onclick="locateMyFarm()" class="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold transition flex items-center space-x-1">
-                    <span>Center on My Location</span>
-                    <span>📍</span>
-                </button>
+                <div class="flex items-center space-x-2">
+                    <button type="button" id="btnToggleNdvi" onclick="toggleNdviLayer()" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[11px] font-bold transition flex items-center space-x-1 shadow-sm">
+                        <span>🛰️ NDVI Vigor</span>
+                    </button>
+                    <button type="button" id="btnLocateFarm" onclick="locateMyFarm()" class="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold transition flex items-center space-x-1">
+                        <span>📍 Center</span>
+                    </button>
+                </div>
             </div>
             <!-- Global Map Location Search Bar -->
             <div class="relative">
@@ -54,6 +58,42 @@
                 </button>
             </div>
             <div id="farmMap" class="w-full h-80 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-inner z-10"></div>
+            
+            <!-- NDVI Multispectral Heatmap Stats & Legend (Appears on Toggle) -->
+            <div id="ndviPanel" class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-emerald-500/20 space-y-2.5">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-bold text-slate-700 dark:text-slate-200 flex items-center space-x-1">
+                        <span>🛰️ Sentinel-2 / Drone NDVI Analysis</span>
+                    </span>
+                    <span id="ndviStatusBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300">
+                        Overlay Active
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                        <div class="text-[10px] text-slate-400">Mean NDVI</div>
+                        <div id="ndviMeanVal" class="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">0.68</div>
+                    </div>
+                    <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                        <div class="text-[10px] text-slate-400">Canopy Health</div>
+                        <div id="ndviHealthScore" class="text-sm font-extrabold text-teal-600 dark:text-teal-400">85/100</div>
+                    </div>
+                    <div class="p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                        <div class="text-[10px] text-slate-400">Uniformity</div>
+                        <div id="ndviUniformity" class="text-sm font-extrabold text-blue-600 dark:text-blue-400">76%</div>
+                    </div>
+                </div>
+                <!-- Spectral Ramp Legend -->
+                <div class="space-y-1">
+                    <div class="h-2 rounded-full w-full bg-gradient-to-r from-red-600 via-amber-400 via-lime-500 via-emerald-500 to-green-800"></div>
+                    <div class="flex justify-between text-[9px] font-medium text-slate-400">
+                        <span>0.15 (Stress/Soil)</span>
+                        <span>0.45 (Moderate)</span>
+                        <span>0.85 (Peak Vigor)</span>
+                    </div>
+                </div>
+            </div>
+
             <p class="text-[11px] text-slate-400 italic">
                 *Pins show GPS coordinates of each management zone. Coordinates are embedded directly into the exported tractor VRA GeoJSON.
             </p>
@@ -269,6 +309,8 @@
     let map = null;
     let markers = [];
     let latestGeoJson = null;
+    let ndviLayerGroup = null;
+    let isNdviVisible = false;
 
     let baseLat = 31.1471;
     let baseLon = 75.3412;
@@ -288,6 +330,7 @@
             if (map) {
                 map.setView([lat, lon], 14);
                 updateMapMarkers();
+                if (isNdviVisible) toggleNdviLayer(true);
             }
             if (btn) btn.innerHTML = `<span>Center on My Location</span> <span>📍</span>`;
         }
@@ -341,6 +384,7 @@
             if (map) {
                 map.setView([lat, lon], 14);
                 updateMapMarkers();
+                if (isNdviVisible) toggleNdviLayer(true);
             }
             return;
         }
@@ -355,6 +399,7 @@
                     if (map) {
                         map.setView([baseLat, baseLon], 14);
                         updateMapMarkers();
+                        if (isNdviVisible) toggleNdviLayer(true);
                     }
                 } else {
                     alert(`Location '${query}' not found.`);
@@ -407,6 +452,7 @@
         L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
 
         updateMapMarkers();
+        toggleNdviLayer(true);
 
         map.on('click', function (e) {
             addNewZoneRowWithCoord(e.latlng.lat, e.latlng.lng);
@@ -418,6 +464,91 @@
         window.addEventListener('resize', () => {
             if (map) map.invalidateSize();
         });
+    }
+
+    function toggleNdviLayer(forceOn = false) {
+        if (!map) return;
+        const btn = document.getElementById('btnToggleNdvi');
+        const panel = document.getElementById('ndviPanel');
+        const badge = document.getElementById('ndviStatusBadge');
+
+        if (isNdviVisible && !forceOn) {
+            if (ndviLayerGroup) ndviLayerGroup.clearLayers();
+            isNdviVisible = false;
+            if (btn) btn.innerHTML = `<span>🛰️ NDVI Vigor</span>`;
+            if (panel) panel.classList.add('opacity-40');
+            if (badge) {
+                badge.textContent = "Overlay Paused";
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500";
+            }
+            return;
+        }
+
+        if (btn) btn.innerHTML = `<span>Loading...</span> <span class="animate-spin inline-block">⌛</span>`;
+
+        fetch(`/api/ndvi-satellite/?lat=${baseLat}&lon=${baseLon}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!ndviLayerGroup) {
+                    ndviLayerGroup = L.layerGroup().addTo(map);
+                } else {
+                    ndviLayerGroup.clearLayers();
+                }
+
+                if (data.geojson && data.geojson.features) {
+                    L.geoJSON(data.geojson, {
+                        style: function(feat) {
+                            return {
+                                fillColor: feat.properties.color || '#22c55e',
+                                weight: 1,
+                                opacity: 0.8,
+                                color: '#ffffff',
+                                fillOpacity: 0.58
+                            };
+                        },
+                        onEachFeature: function(feat, layer) {
+                            const p = feat.properties;
+                            layer.bindTooltip(`
+                                <div class="text-xs">
+                                    <strong class="text-emerald-700 dark:text-emerald-300">${p.cell_id}</strong><br/>
+                                    NDVI Vigor: <b>${p.ndvi}</b><br/>
+                                    Chlorophyll: <b>${p.chlorophyll_spad} SPAD</b><br/>
+                                    Biomass: <b>${p.biomass_est_tha} t/ha</b><br/>
+                                    <span class="text-[10px] text-slate-500">${p.label}</span>
+                                </div>
+                            `, { sticky: true });
+
+                            layer.on('click', function() {
+                                layer.bindPopup(`
+                                    <div class="p-1 space-y-1 text-xs">
+                                        <h4 class="font-bold text-slate-800">${p.cell_id} Satellite Vigor</h4>
+                                        <p><b>NDVI Index:</b> ${p.ndvi}</p>
+                                        <p><b>Chlorophyll Index:</b> ${p.chlorophyll_spad} SPAD</p>
+                                        <p><b>Estimated Biomass:</b> ${p.biomass_est_tha} t/ha</p>
+                                        <p class="text-[11px] text-emerald-600 font-semibold">${p.label}</p>
+                                    </div>
+                                `).openPopup();
+                            });
+                        }
+                    }).addTo(ndviLayerGroup);
+                }
+
+                document.getElementById('ndviMeanVal').textContent = data.mean_ndvi.toFixed(2);
+                document.getElementById('ndviHealthScore').textContent = `${data.health_score}/100`;
+                document.getElementById('ndviUniformity').textContent = `${data.canopy_uniformity_pct}%`;
+
+                isNdviVisible = true;
+                if (btn) btn.innerHTML = `<span>🛰️ Hide NDVI</span>`;
+                if (panel) panel.classList.remove('opacity-40');
+                if (badge) {
+                    badge.textContent = "Overlay Active";
+                    badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300";
+                }
+            })
+            .catch(err => {
+                console.error("NDVI fetch failed", err);
+                if (btn) btn.innerHTML = `<span>🛰️ NDVI Vigor</span>`;
+            });
     }
 
     function updateMapMarkers() {

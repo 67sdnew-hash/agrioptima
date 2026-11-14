@@ -510,3 +510,58 @@ class FarmerAuthTests(TestCase):
         self.assertTrue(res_login_email.context['user'].is_authenticated)
 
 
+class LeafDoctorAndNDVITests(TestCase):
+    def test_leaf_doctor_service_pathogen(self):
+        from optimizer.services.leaf_doctor import diagnose_leaf_image
+        diag = diagnose_leaf_image(crop_type='Wheat', symptom_hints='yellow stripe rust pustules')
+        self.assertTrue(diag['success'])
+        self.assertEqual(diag['type'], 'pathogen')
+        self.assertIn('Rust', diag['primary_diagnosis'])
+        self.assertGreater(diag['confidence_score'], 80.0)
+        self.assertIn('delta_n', diag['nutrient_adjustments'])
+
+    def test_leaf_doctor_service_deficiency(self):
+        from optimizer.services.leaf_doctor import diagnose_leaf_image
+        diag = diagnose_leaf_image(crop_type='Wheat', symptom_hints='pale yellow chlorosis V-shape on lower leaves')
+        self.assertTrue(diag['success'])
+        self.assertEqual(diag['type'], 'nutrient_deficiency')
+        self.assertIn('Nitrogen', diag['primary_diagnosis'])
+        self.assertGreater(diag['nutrient_adjustments']['delta_n'], 0)
+
+    def test_leaf_doctor_api_endpoint(self):
+        payload = {
+            'crop_type': 'Maize',
+            'symptom_hints': 'purple reddish margins on seedling foliage'
+        }
+        res = self.client.post(
+            reverse('leaf_doctor_api'),
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data['success'])
+        self.assertIn('Phosphorus', data['primary_diagnosis'])
+
+    def test_ndvi_satellite_service(self):
+        from optimizer.services.ndvi_satellite import generate_field_ndvi_analysis
+        analysis = generate_field_ndvi_analysis(lat=31.1471, lon=75.3412)
+        self.assertTrue(analysis['success'])
+        self.assertIn('geojson', analysis)
+        self.assertEqual(analysis['geojson']['type'], 'FeatureCollection')
+        self.assertGreaterEqual(len(analysis['geojson']['features']), 16)
+        self.assertGreater(analysis['mean_ndvi'], 0.1)
+        self.assertLessEqual(analysis['mean_ndvi'], 1.0)
+        self.assertIn('health_score', analysis)
+
+    def test_ndvi_satellite_api_endpoint(self):
+        res = self.client.get(reverse('ndvi_satellite_api') + '?lat=31.1471&lon=75.3412')
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data['success'])
+        self.assertIn('geojson', data)
+        self.assertIn('mean_ndvi', data)
+        self.assertIn('palette', data)
+
+
+

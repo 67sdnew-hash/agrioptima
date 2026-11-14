@@ -22,4 +22,6 @@ urlpatterns = [
     path('auth/logout/', views.logout_view, name='logout'),
     path('api/auth/send-otp/', views.send_registration_otp_api, name='send_registration_otp_api'),
     path('api/auth/verify-otp/', views.verify_registration_otp_api, name='verify_registration_otp_api'),
+    path('api/diagnose-leaf/', views.leaf_doctor_api_view, name='leaf_doctor_api'),
+    path('api/ndvi-satellite/', views.ndvi_satellite_api_view, name='ndvi_satellite_api'),
 ]

@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import base64
 from datetime import datetime
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
@@ -18,6 +19,8 @@ from .services.weather import fetch_weather_forecast, DEFAULT_PRESETS
 from .services.split_schedule import calculate_split_schedule, generate_ics_calendar, get_google_calendar_url
 from .services.ai_agronomist import answer_agronomic_query
 from .services.notification import dispatch_email_otp, dispatch_sms_otp
+from .services.leaf_doctor import diagnose_leaf_image
+from .services.ndvi_satellite import generate_field_ndvi_analysis
 
 
 def dashboard_view(request):
@@ -834,5 +837,60 @@ def logout_view(request):
     logout(request)
     messages.info(request, "You have been logged out safely.")
     return redirect('dashboard')
+
+
+@csrf_exempt
+@require_POST
+def leaf_doctor_api_view(request):
+    """
+    API endpoint for AI Leaf Doctor Visual Diagnostic Engine.
+    Accepts crop_type, image_data_b64 (or file upload), symptom_hints.
+    Returns diagnostic analysis with disease identification, severity,
+    pathogen vs starvation, causes, treatments, and N-P-K nutrient adjustments.
+    """
+    try:
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            crop_type = request.POST.get('crop_type', 'Wheat')
+            symptom_hints = request.POST.get('symptom_hints', '')
+            image_b64 = None
+            if 'leaf_image' in request.FILES:
+                img_file = request.FILES['leaf_image']
+                image_b64 = base64.b64encode(img_file.read()).decode('utf-8')
+        else:
+            data = json.loads(request.body.decode('utf-8'))
+            crop_type = data.get('crop_type', 'Wheat')
+            symptom_hints = data.get('symptom_hints', '')
+            image_b64 = data.get('image_b64')
+
+        result = diagnose_leaf_image(crop_type=crop_type, image_data_b64=image_b64, symptom_hints=symptom_hints)
+        return JsonResponse(result)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def ndvi_satellite_api_view(request):
+    """
+    API endpoint for Multispectral Satellite & Drone NDVI Vigor Heatmap.
+    Accepts GET or POST with lat, lon, and optional zones json.
+    Returns GeoJSON grid of NDVI raster cells, color ramp, and zonal prescription factors.
+    """
+    try:
+        if request.method == 'POST':
+            data = json.loads(request.body.decode('utf-8'))
+            lat = float(data.get('latitude') or data.get('lat') or 31.1471)
+            lon = float(data.get('longitude') or data.get('lon') or 75.3412)
+            zones = data.get('zones', [])
+        else:
+            lat = float(request.GET.get('lat') or 31.1471)
+            lon = float(request.GET.get('lon') or 75.3412)
+            zones_raw = request.GET.get('zones')
+            zones = json.loads(zones_raw) if zones_raw else []
+
+        analysis = generate_field_ndvi_analysis(lat=lat, lon=lon, zones=zones)
+        return JsonResponse(analysis)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 
 

@@ -19,11 +19,19 @@
                 Input baseline soil metrics and real-time precipitation forecasts to compute the minimal supplemental nutrients ($\Delta N, \Delta P, \Delta K$) needed to guarantee target yield while preventing environmental run-off.
             </p>
         </div>
-        <div class="flex items-center space-x-3 relative z-10">
-            <a href="{% url 'multi_zone' %}" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center space-x-2">
-                <span>Multi-Zone Field Mapper</span>
+        <div class="flex flex-wrap items-center gap-2.5 relative z-10">
+            <button type="button" onclick="openLeafDoctorModal()" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center space-x-2">
+                <span>🌿 AI Leaf Doctor</span>
+                <span>📷</span>
+            </button>
+            <a href="{% url 'multi_zone' %}" class="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all flex items-center space-x-2">
+                <span>🛰️ Satellite NDVI</span>
                 <span>🗺️</span>
             </a>
+            <button type="button" onclick="toggleAiCopilot()" class="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all flex items-center space-x-2">
+                <span>🎙️ Voice Agronomist</span>
+                <span>🗣️</span>
+            </button>
         </div>
     </div>
 
@@ -432,8 +440,16 @@
         </div>
     </div>
 
-    <!-- AI Agronomist Copilot Floating Trigger Button -->
-    <div class="fixed bottom-6 right-6 z-40">
+    <!-- Floating Action Buttons Cluster (Leaf Doctor + Voice Copilot) -->
+    <div class="fixed bottom-6 right-6 z-40 flex flex-col items-end space-y-3">
+        <button 
+            type="button" 
+            onclick="openLeafDoctorModal()" 
+            class="px-4 py-2.5 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white font-bold text-xs shadow-xl shadow-teal-900/25 flex items-center space-x-2 transition-all transform hover:scale-105 active:scale-95 border border-teal-400/30"
+        >
+            <span class="text-sm">🌿</span>
+            <span>AI Leaf Doctor</span>
+        </button>
         <button 
             type="button" 
             id="aiCopilotBtn" 
@@ -441,9 +457,142 @@
             class="px-5 py-3 rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-2xl shadow-emerald-900/30 flex items-center space-x-2.5 transition-all transform hover:scale-105 active:scale-95 border border-emerald-400/30"
         >
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-300 animate-ping"></span>
-            <span class="text-base">🤖</span>
-            <span>AI Agronomist Copilot</span>
+            <span class="text-base">🎙️</span>
+            <span>Voice Agronomist</span>
         </button>
+    </div>
+
+    <!-- AI Leaf Doctor Modal Backdrop -->
+    <div id="leafDoctorBackdrop" onclick="closeLeafDoctorModal()" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 transition-opacity hidden"></div>
+
+    <!-- AI Leaf Doctor Modal -->
+    <div id="leafDoctorModal" class="fixed inset-3 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[680px] max-h-[92vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl z-50 overflow-hidden hidden flex flex-col">
+        <!-- Modal Header -->
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-emerald-500/20">
+                    🌿
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">AI Leaf Doctor 🌿📷</h3>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300">
+                            Pathogen vs Starvation
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Computer vision leaf diagnostic & nutrient deficiency correction</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeLeafDoctorModal()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 text-sm font-bold flex items-center justify-center transition">
+                ✕
+            </button>
+        </div>
+
+        <!-- Modal Body (Scrollable) -->
+        <div class="flex-1 p-5 overflow-y-auto space-y-4 text-xs">
+            <!-- Crop Selection & Notes -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Select Crop</label>
+                    <select id="leafCropSelect" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold focus:ring-1 focus:ring-emerald-500">
+                        <option value="Wheat" selected>🌾 Wheat (Triticum aestivum)</option>
+                        <option value="Rice">🌾 Rice / Paddy (Oryza sativa)</option>
+                        <option value="Maize">🌽 Maize / Corn (Zea mays)</option>
+                        <option value="Cotton">🌱 Cotton (Gossypium)</option>
+                        <option value="Potato">🥔 Potato (Solanum tuberosum)</option>
+                        <option value="Tomato">🍅 Tomato (Solanum lycopersicum)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1">Visual Symptom Hints / Notes</label>
+                    <input type="text" id="leafSymptomHint" placeholder="e.g. Yellow rust stripes, tip burn, purple edges..." class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs focus:ring-1 focus:ring-emerald-500">
+                </div>
+            </div>
+
+            <!-- Drag & Drop Upload or Camera Capture -->
+            <div id="dropZone" onclick="document.getElementById('leafPhotoFile').click()" class="relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 rounded-2xl p-6 text-center cursor-pointer transition bg-slate-50/50 dark:bg-slate-800/30 group">
+                <input type="file" id="leafPhotoFile" accept="image/*" capture="environment" class="hidden" onchange="handleLeafFileSelect(event)">
+                
+                <div id="uploadPrompt" class="space-y-2">
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                        📷
+                    </div>
+                    <div>
+                        <p class="font-bold text-slate-800 dark:text-slate-200">Take Photo with Field Camera or Upload Image</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Instant mobile leaf scanning • JPG, PNG or WebP</p>
+                    </div>
+                </div>
+
+                <!-- Preview Container with Scanning Radar Animation -->
+                <div id="previewContainer" class="hidden relative max-h-52 overflow-hidden rounded-xl">
+                    <img id="leafImgPreview" src="" alt="Leaf preview" class="w-full h-44 object-cover rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div id="scanningRadar" class="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/30 to-emerald-400/10 border-b-2 border-emerald-400 pointer-events-none hidden animate-pulse"></div>
+                </div>
+            </div>
+
+            <!-- Quick Sample Test Chips -->
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">Or Try Instant Agronomic Test Cases:</span>
+                <div class="flex flex-wrap gap-1.5">
+                    <button type="button" onclick="loadSampleTest('Wheat', 'Yellow stripe rust pustules on leaf veins')" class="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition">
+                        🌾 Wheat Yellow Rust
+                    </button>
+                    <button type="button" onclick="loadSampleTest('Wheat', 'Pale yellow chlorosis along V-shape midrib on lower leaves')" class="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition">
+                        🌾 Nitrogen Chlorosis
+                    </button>
+                    <button type="button" onclick="loadSampleTest('Rice', 'Spindle-shaped diamond blast lesions with grey center')" class="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition">
+                        🌾 Rice Blast
+                    </button>
+                    <button type="button" onclick="loadSampleTest('Maize', 'Pronounced purple reddish margins on young seedling leaves')" class="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition">
+                        🌽 Phosphorus Purple
+                    </button>
+                    <button type="button" onclick="loadSampleTest('Wheat', 'Marginal brown tip scorch burn on outer leaf edges')" class="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium transition">
+                        🌿 Potassium Tip Burn
+                    </button>
+                </div>
+            </div>
+
+            <!-- Run Scan Button -->
+            <button type="button" id="btnRunLeafScan" onclick="runLeafDiagnosis()" class="w-full py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-2xl shadow-lg shadow-emerald-600/20 transition flex items-center justify-center space-x-2">
+                <span>⚡ Run AI Diagnostic Scan</span>
+            </button>
+
+            <!-- Results Card (Hidden until analyzed) -->
+            <div id="leafDiagnosisResult" class="hidden p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-500/30 space-y-3">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span id="diagTypeBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Pathogen Disease</span>
+                            <span id="diagSeverityBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">High Severity</span>
+                        </div>
+                        <h4 id="diagPrimaryName" class="text-sm font-extrabold text-slate-900 dark:text-white mt-1">Stripe Rust (Puccinia striiformis)</h4>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-slate-400 font-bold block">CONFIDENCE</span>
+                        <span id="diagConfidence" class="text-base font-black text-emerald-600 dark:text-emerald-400">94.2%</span>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300 border-t border-slate-200 dark:border-slate-800 pt-2">
+                    <p><strong>Clinical Symptoms:</strong> <span id="diagSymptoms">...</span></p>
+                    <p><strong>Primary Cause:</strong> <span id="diagCause">...</span></p>
+                    <p><strong>Prescribed Treatment:</strong> <span id="diagTreatment" class="text-emerald-700 dark:text-emerald-300 font-semibold">...</span></p>
+                </div>
+
+                <!-- Nutrient Adjustments Action Box -->
+                <div class="p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Nutrient Impact on Optimizer</span>
+                        <div id="diagNutrientDeltas" class="font-mono text-xs font-bold text-slate-800 dark:text-slate-200">
+                            ΔN: +0 kg/ha | ΔP: +0 kg/ha | ΔK: +0 kg/ha
+                        </div>
+                    </div>
+                    <button type="button" id="btnApplyLeafNutrients" onclick="applyNutrientsToForm()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center space-x-1 whitespace-nowrap">
+                        <span>⚡ Apply to Optimizer</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- AI Agronomist Copilot Slide-In Drawer -->
@@ -459,7 +608,7 @@
                 <div>
                     <div class="flex items-center space-x-2">
                         <h3 class="text-sm font-bold text-slate-900 dark:text-white">AI Agronomist Copilot</h3>
-                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span class="px-1.5 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950 text-[9px] font-bold text-emerald-700 dark:text-emerald-300">🎙️ Voice</span>
                     </div>
                     <p class="text-[10px] text-slate-400">Grounded in your active soil test & prescription</p>
                 </div>
@@ -484,7 +633,7 @@
                 </div>
                 <div class="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 space-y-2 max-w-[85%]">
                     <p>Hello! I am your <strong>AgriOptima Precision Agronomist</strong>. I have analyzed your soil parameters and prescriptive fertilizer recommendations.</p>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Ask me anything about nutrient uptake, split-application timing, soil pH buffering, or organic alternatives below!</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Ask me anything about nutrient uptake, split-application timing, soil pH buffering, or speak hands-free via the microphone!</p>
                 </div>
             </div>
         </div>
@@ -508,20 +657,44 @@
             </div>
         </div>
 
-        <!-- Chat Input Form -->
-        <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <!-- Chat Input Form & Hands-Free Audio Controls -->
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
+            <!-- Hands-Free Field Mode Toggle -->
+            <div class="flex items-center justify-between px-1">
+                <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold flex items-center space-x-1">
+                    <span>🎧 Hands-Free Field Mode (Auto Speak Responses):</span>
+                </span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="fieldModeToggle" class="sr-only peer" onchange="toggleHandsFreeMode(this.checked)">
+                    <div class="w-8 h-4 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3.5 after:transition-all peer-checked:bg-emerald-600"></div>
+                </label>
+            </div>
+
             <form onsubmit="submitAiMessage(event)" class="relative flex items-center">
                 <input 
                     type="text" 
                     id="aiMessageInput" 
-                    placeholder="Ask an agronomic question..." 
+                    placeholder="Ask a question or tap mic to speak in your language..." 
                     autocomplete="off"
-                    class="w-full text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-12 py-3 text-slate-800 dark:text-slate-200 font-medium focus:ring-1 focus:ring-emerald-500"
+                    class="w-full text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-24 py-3 text-slate-800 dark:text-slate-200 font-medium focus:ring-1 focus:ring-emerald-500"
                 >
-                <button type="submit" class="absolute right-2.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition">
-                    Send
-                </button>
+                <div class="absolute right-2 flex items-center space-x-1">
+                    <!-- Microphone Speech Recognition Button -->
+                    <button type="button" id="btnVoiceInput" onclick="toggleVoiceRecognition()" title="Voice Dictation (Speech-to-Text)" class="p-2 rounded-xl text-slate-400 hover:text-emerald-600 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <span id="voiceMicIcon" class="text-sm">🎙️</span>
+                    </button>
+                    <!-- Submit Send Button -->
+                    <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition">
+                        Send
+                    </button>
+                </div>
             </form>
+
+            <!-- Live Speech Status Indicator -->
+            <div id="voiceStatusNotice" class="text-[10px] text-emerald-600 font-semibold hidden flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                <span id="voiceStatusText">Listening to your voice in native language... Speak now!</span>
+            </div>
         </div>
     </div>
 </div>
@@ -906,6 +1079,247 @@
         return escaped;
     }
 
+    let lastDiagnosedNutrients = { delta_n: 0, delta_p: 0, delta_k: 0 };
+    let uploadedLeafB64 = null;
+    let isListeningVoice = false;
+    let speechRecognizer = null;
+    let handsFreeModeActive = false;
+
+    // --- AI Leaf Doctor Logic ---
+    function openLeafDoctorModal() {
+        const modal = document.getElementById('leafDoctorModal');
+        const backdrop = document.getElementById('leafDoctorBackdrop');
+        modal.classList.remove('hidden');
+        backdrop.classList.remove('hidden');
+    }
+
+    function closeLeafDoctorModal() {
+        const modal = document.getElementById('leafDoctorModal');
+        const backdrop = document.getElementById('leafDoctorBackdrop');
+        modal.classList.add('hidden');
+        backdrop.classList.add('hidden');
+    }
+
+    function handleLeafFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            uploadedLeafB64 = e.target.result;
+            const preview = document.getElementById('leafImgPreview');
+            preview.src = uploadedLeafB64;
+            document.getElementById('uploadPrompt').classList.add('hidden');
+            document.getElementById('previewContainer').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function loadSampleTest(crop, hint) {
+        document.getElementById('leafCropSelect').value = crop;
+        document.getElementById('leafSymptomHint').value = hint;
+        runLeafDiagnosis();
+    }
+
+    function runLeafDiagnosis() {
+        const crop = document.getElementById('leafCropSelect').value;
+        const hint = document.getElementById('leafSymptomHint').value;
+        const btn = document.getElementById('btnRunLeafScan');
+        const radar = document.getElementById('scanningRadar');
+        const resultCard = document.getElementById('leafDiagnosisResult');
+
+        btn.innerHTML = `<span>Scanning Leaf Pathology...</span> <span class="animate-spin inline-block">⌛</span>`;
+        if (radar) radar.classList.remove('hidden');
+
+        fetch('/api/diagnose-leaf/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                crop_type: crop,
+                symptom_hints: hint,
+                image_b64: uploadedLeafB64
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.innerHTML = `<span>⚡ Run AI Diagnostic Scan</span>`;
+            if (radar) radar.classList.add('hidden');
+
+            if (data.success) {
+                document.getElementById('diagPrimaryName').textContent = data.primary_diagnosis;
+                document.getElementById('diagConfidence').textContent = `${data.confidence_score}%`;
+                
+                // Badges
+                const typeBadge = document.getElementById('diagTypeBadge');
+                if (data.type === 'pathogen') {
+                    typeBadge.textContent = "Pathogen Disease (Fungal / Bacterial)";
+                    typeBadge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300";
+                } else {
+                    typeBadge.textContent = "Nutrient Starvation / Deficiency";
+                    typeBadge.className = "px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300";
+                }
+
+                const sevBadge = document.getElementById('diagSeverityBadge');
+                sevBadge.textContent = `${data.severity} Severity`;
+
+                document.getElementById('diagSymptoms').textContent = data.clinical_symptoms;
+                document.getElementById('diagCause').textContent = data.underlying_cause;
+                document.getElementById('diagTreatment').textContent = data.prescribed_treatment;
+
+                lastDiagnosedNutrients = data.nutrient_adjustments || { delta_n: 0, delta_p: 0, delta_k: 0 };
+                const dn = (lastDiagnosedNutrients.delta_n >= 0 ? '+' : '') + lastDiagnosedNutrients.delta_n;
+                const dp = (lastDiagnosedNutrients.delta_p >= 0 ? '+' : '') + lastDiagnosedNutrients.delta_p;
+                const dk = (lastDiagnosedNutrients.delta_k >= 0 ? '+' : '') + lastDiagnosedNutrients.delta_k;
+                document.getElementById('diagNutrientDeltas').textContent = `ΔN: ${dn} kg/ha | ΔP: ${dp} kg/ha | ΔK: ${dk} kg/ha`;
+
+                resultCard.classList.remove('hidden');
+                resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                alert(`Diagnostic scan failed: ${data.error || 'Unknown error'}`);
+            }
+        })
+        .catch(err => {
+            btn.innerHTML = `<span>⚡ Run AI Diagnostic Scan</span>`;
+            if (radar) radar.classList.add('hidden');
+            console.error("Leaf doctor scan error", err);
+            alert("Error analyzing leaf. Please try again.");
+        });
+    }
+
+    function applyNutrientsToForm() {
+        const nInput = document.getElementById('id_current_nitrogen');
+        const pInput = document.getElementById('id_current_phosphorus');
+        const kInput = document.getElementById('id_current_potassium');
+
+        if (nInput && lastDiagnosedNutrients.delta_n) {
+            nInput.value = Math.max(5, parseFloat(nInput.value || 0) + lastDiagnosedNutrients.delta_n).toFixed(1);
+        }
+        if (pInput && lastDiagnosedNutrients.delta_p) {
+            pInput.value = Math.max(5, parseFloat(pInput.value || 0) + lastDiagnosedNutrients.delta_p).toFixed(1);
+        }
+        if (kInput && lastDiagnosedNutrients.delta_k) {
+            kInput.value = Math.max(5, parseFloat(kInput.value || 0) + lastDiagnosedNutrients.delta_k).toFixed(1);
+        }
+
+        const applyBtn = document.getElementById('btnApplyLeafNutrients');
+        applyBtn.innerHTML = `<span>✓ Applied to Optimizer!</span>`;
+        applyBtn.classList.remove('bg-emerald-600');
+        applyBtn.classList.add('bg-teal-700');
+
+        setTimeout(() => {
+            closeLeafDoctorModal();
+            applyBtn.innerHTML = `<span>⚡ Apply to Optimizer</span>`;
+            applyBtn.classList.remove('bg-teal-700');
+            applyBtn.classList.add('bg-emerald-600');
+        }, 1200);
+    }
+
+    // --- Voice Agronomist (Speech-to-Text & Text-to-Speech) Logic ---
+    function getAgronomistVoiceLanguage() {
+        const savedLang = localStorage.getItem('agrioptima_lang_code') || localStorage.getItem('agrioptima_lang') || 'en';
+        const map = {
+            'hi': 'hi-IN',
+            'pa': 'pa-IN',
+            'bn': 'bn-BD',
+            'te': 'te-IN',
+            'ta': 'ta-IN',
+            'mr': 'mr-IN',
+            'gu': 'gu-IN',
+            'kn': 'kn-IN',
+            'es': 'es-ES',
+            'fr': 'fr-FR',
+            'pt': 'pt-BR',
+            'sw': 'sw-KE',
+            'ar': 'ar-SA',
+            'en': 'en-US'
+        };
+        return map[savedLang] || 'en-US';
+    }
+
+    function toggleHandsFreeMode(active) {
+        handsFreeModeActive = active;
+    }
+
+    function toggleVoiceRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
+            return;
+        }
+
+        const micIcon = document.getElementById('voiceMicIcon');
+        const statusNotice = document.getElementById('voiceStatusNotice');
+        const statusText = document.getElementById('voiceStatusText');
+
+        if (isListeningVoice && speechRecognizer) {
+            speechRecognizer.stop();
+            return;
+        }
+
+        try {
+            speechRecognizer = new SpeechRecognition();
+            const targetLang = getAgronomistVoiceLanguage();
+            speechRecognizer.lang = targetLang;
+            speechRecognizer.interimResults = false;
+            speechRecognizer.maxAlternatives = 1;
+
+            speechRecognizer.onstart = function() {
+                isListeningVoice = true;
+                if (micIcon) micIcon.textContent = '🔴';
+                if (statusNotice) {
+                    statusNotice.classList.remove('hidden');
+                    statusText.textContent = `Listening in native language (${targetLang})... Speak your farming query now!`;
+                }
+            };
+
+            speechRecognizer.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
+                const input = document.getElementById('aiMessageInput');
+                if (input) {
+                    input.value = speechResult;
+                    sendAiQuery(speechResult);
+                }
+            };
+
+            speechRecognizer.onerror = function(event) {
+                console.warn("Speech recognition error:", event.error);
+                if (statusNotice) statusNotice.classList.add('hidden');
+                if (micIcon) micIcon.textContent = '🎙️';
+                isListeningVoice = false;
+            };
+
+            speechRecognizer.onend = function() {
+                isListeningVoice = false;
+                if (micIcon) micIcon.textContent = '🎙️';
+                if (statusNotice) statusNotice.classList.add('hidden');
+            };
+
+            speechRecognizer.start();
+        } catch (err) {
+            console.error("Speech recognition start failed:", err);
+            isListeningVoice = false;
+            if (micIcon) micIcon.textContent = '🎙️';
+        }
+    }
+
+    function speakAgronomistText(text) {
+        if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel(); // Stop any active speech
+
+        // Strip markdown stars, bullets, hashes
+        const plainText = text
+            .replace(/\*\*(.*?)\*\*/g, '$1')
+            .replace(/• /g, ', ')
+            .replace(/[#*_~`]/g, '')
+            .trim();
+
+        const utterance = new SpeechSynthesisUtterance(plainText);
+        utterance.lang = getAgronomistVoiceLanguage();
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+    }
+
     function appendMessage(sender, text) {
         const container = document.getElementById('aiChatMessages');
         const bubble = document.createElement('div');
@@ -921,14 +1335,25 @@
                 </div>
             `;
         } else {
+            const rawEscaped = text.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
             bubble.innerHTML = `
                 <div class="w-7 h-7 rounded-xl overflow-hidden shadow-xs border border-emerald-500/30 flex-shrink-0">
                     <img src="{% static 'images/agrioptima_logo.svg' %}" alt="AgriOptima" class="w-full h-full object-cover">
                 </div>
                 <div class="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs space-y-2 max-w-[85%] shadow-sm leading-relaxed">
-                    ${renderAiMarkdown(text)}
+                    <div>${renderAiMarkdown(text)}</div>
+                    <div class="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between">
+                        <button type="button" onclick="speakAgronomistText(decodeURIComponent('${encodeURIComponent(text)}'))" class="text-[10px] text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold flex items-center space-x-1 transition">
+                            <span>🔊 Listen Out Loud</span>
+                        </button>
+                    </div>
                 </div>
             `;
+
+            // If hands-free field mode is active, auto-speak response
+            if (handsFreeModeActive) {
+                speakAgronomistText(text);
+            }
         }
 
         container.appendChild(bubble);
