@@ -4,10 +4,6 @@
 {% block title %}Farmer Community & Nearby Peer Hub — AgriOptima 3D{% endblock %}
 
 {% block extra_scripts %}
-<!-- Leaflet Map CSS & JS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
     const MAP_PINS = {{ map_pins_json|safe }};
     let communityMap = null;
@@ -23,37 +19,81 @@
         const container = document.getElementById('communityMap');
         if (!container) return;
 
+        if (communityMap) {
+            communityMap.remove();
+            communityMap = null;
+        }
+
+        // Google Maps Inspired Tile Layers
+        const googleSat = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: '© Google Satellite'
+        });
+
+        const googleTerrain = L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: '© Google Terrain'
+        });
+
+        const googleRoads = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: '© Google Roads'
+        });
+
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        });
+
         communityMap = L.map('communityMap', {
             zoomControl: true,
-            scrollWheelZoom: false
+            scrollWheelZoom: true,
+            layers: [googleSat]
         }).setView([25.0, 15.0], 2);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors',
-            maxZoom: 18
-        }).addTo(communityMap);
+        // Google Maps Layer Control Switcher
+        const baseMaps = {
+            "🛰️ Google Satellite": googleSat,
+            "⛰️ Google Terrain": googleTerrain,
+            "🗺️ Google Roadmap": googleRoads,
+            "🌐 OpenStreetMap": osmLayer
+        };
+        L.control.layers(baseMaps, null, { position: 'topright' }).addTo(communityMap);
 
         markersLayer = L.layerGroup().addTo(communityMap);
 
         const bounds = [];
         MAP_PINS.forEach(pin => {
             if (pin.lat && pin.lon) {
-                const marker = L.circleMarker([pin.lat, pin.lon], {
-                    radius: 8,
-                    fillColor: pin.crop === 'Wheat' ? '#10b981' : (pin.crop === 'Rice' ? '#06b6d4' : (pin.crop === 'Maize' ? '#f59e0b' : '#8b5cf6')),
-                    color: '#ffffff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.9
+                const pinColor = pin.crop === 'Wheat' ? '#10b981' : (pin.crop === 'Rice' ? '#06b6d4' : (pin.crop === 'Maize' ? '#f59e0b' : '#8b5cf6'));
+                
+                const customIcon = L.divIcon({
+                    className: 'custom-google-pin',
+                    html: `
+                        <div style="position:relative; width:28px; height:34px; cursor:pointer;" class="transform hover:scale-125 transition-transform duration-200 drop-shadow-md">
+                            <svg viewBox="0 0 24 32" width="28" height="34" fill="none">
+                                <path d="M12 0C5.37 0 0 5.37 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.37 18.63 0 12 0Z" fill="${pinColor}" stroke="#ffffff" stroke-width="1.5" />
+                                <circle cx="12" cy="11" r="5" fill="#ffffff" />
+                            </svg>
+                            <span style="position:absolute; top:7px; left:7px; font-size:9px;">🌱</span>
+                        </div>
+                    `,
+                    iconSize: [28, 34],
+                    iconAnchor: [14, 34],
+                    popupAnchor: [0, -30]
                 });
 
+                const marker = L.marker([pin.lat, pin.lon], { icon: customIcon });
+
                 const popupHtml = `
-                    <div class="text-xs p-1 space-y-1">
-                        <div class="font-bold text-slate-900">${pin.author}</div>
+                    <div class="text-xs p-1 space-y-1.5" style="min-width: 170px;">
+                        <div class="flex items-center justify-between border-b pb-1">
+                            <strong class="text-slate-900">${pin.author}</strong>
+                            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold text-white" style="background:${pinColor}">${pin.crop}</span>
+                        </div>
                         <div class="text-slate-500 text-[10px]">📍 ${pin.location}</div>
-                        <div class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">${pin.crop}</div>
-                        <div class="font-semibold text-slate-800 text-[11px] mt-1">${pin.title}</div>
-                        <div class="text-[10px] text-slate-400">${pin.replies_count} farmer replies</div>
+                        <div class="font-bold text-slate-800 text-[11px] leading-snug">${pin.title}</div>
+                        <div class="text-[10px] text-emerald-600 font-semibold">${pin.replies_count} farmer replies</div>
                     </div>
                 `;
                 marker.bindPopup(popupHtml);
@@ -63,8 +103,15 @@
         });
 
         if (bounds.length > 0) {
-            communityMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 5 });
+            communityMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
         }
+
+        setTimeout(() => {
+            if (communityMap) communityMap.invalidateSize();
+        }, 300);
+        window.addEventListener('resize', () => {
+            if (communityMap) communityMap.invalidateSize();
+        });
     }
 
     function toggleComposer() {

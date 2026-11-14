@@ -1,13 +1,16 @@
 import json
 import os
+import random
 from datetime import datetime
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import OptimizationRecord, CommunityPost, CommunityReply, CommunityChatMessage
+from .models import OptimizationRecord, CommunityPost, CommunityReply, CommunityChatMessage, FarmerProfile
 from .forms import SoilOptimizationForm
 from .services.optimization import optimize_fertilizer, generate_response_curves
 from .services.pdf_generator import generate_agronomist_pdf, calculate_commercial_bags
@@ -655,4 +658,173 @@ def community_chat_api(request):
         } for m in msgs]
 
         return JsonResponse({'success': True, 'messages': data})
+
+
+def login_view(request):
+    """Farmer Sign In supporting either Phone Number OR Email Address + Password."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        identifier = request.POST.get('identifier', '').strip()
+        password = request.POST.get('password', '').strip()
+
+        if not identifier or not password:
+            messages.error(request, "Please enter both your Phone / Email and Password.")
+            return render(request, 'optimizer/login.html', {'identifier': identifier})
+
+        matched_user = None
+
+        if '@' in identifier:
+            matched_user = User.objects.filter(email__iexact=identifier).first()
+        else:
+            clean_phone = ''.join(c for c in identifier if c.isdigit() or c == '+')
+            profile = FarmerProfile.objects.filter(phone_number__icontains=clean_phone).select_related('user').first()
+            if profile:
+                matched_user = profile.user
+
+        if not matched_user:
+            matched_user = User.objects.filter(username__iexact=identifier).first()
+
+        if matched_user:
+            user = authenticate(request, username=matched_user.username, password=password)
+            if user:
+                login(request, user)
+                messages.success(request, f"Welcome back, Farmer {user.first_name or user.username}!")
+                next_url = request.GET.get('next') or request.POST.get('next') or 'dashboard'
+                return redirect(next_url)
+            else:
+                messages.error(request, "Incorrect password. Please verify and try again.")
+        else:
+            messages.error(request, "No registered farmer found with that Phone Number or Email.")
+
+    return render(request, 'optimizer/login.html')
+
+
+def register_view(request):
+    """Farmer Registration with Phone OTP verification or Email verification."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'optimizer/register.html')
+
+
+@csrf_exempt
+@require_POST
+def send_registration_otp_api(request):
+    """Generates and delivers a 6-digit OTP code to the assigned Phone Number or Email."""
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        method = data.get('method', 'phone').strip().lower()
+        full_name = data.get('full_name', '').strip()
+        phone_number = data.get('phone_number', '').strip()
+        email = data.get('email', '').strip()
+        farm_location = data.get('farm_location', '').strip() or "Local Agro Basin"
+        primary_crop = data.get('primary_crop', 'Wheat').strip()
+        password = data.get('password', '').strip()
+
+        if not full_name:
+            return JsonResponse({'success': False, 'error': 'Full Name is required.'}, status=400)
+        if len(password) < 6:
+            return JsonResponse({'success': False, 'error': 'Password must be at least 6 characters.'}, status=400)
+
+        target = ""
+        if method == 'phone':
+            if not phone_number:
+                return JsonResponse({'success': False, 'error': 'Phone number is required for phone registration.'}, status=400)
+            if FarmerProfile.objects.filter(phone_number=phone_number).exists():
+                return JsonResponse({'success': False, 'error': 'This phone number is already registered. Please sign in.'}, status=400)
+            target = phone_number
+        else:
+            if not email or '@' not in email:
+                return JsonResponse({'success': False, 'error': 'Valid email address is required.'}, status=400)
+            if User.objects.filter(email__iexact=email).exists():
+                return JsonResponse({'success': False, 'error': 'This email is already registered. Please sign in.'}, status=400)
+            target = email
+
+        otp_code = f"{random.randint(100000, 999999)}"
+
+        request.session['farmer_reg_otp'] = otp_code
+        request.session['farmer_reg_payload'] = {
+            'method': method,
+            'full_name': full_name,
+            'phone_number': phone_number,
+            'email': email,
+            'farm_location': farm_location,
+            'primary_crop': primary_crop,
+            'password': password
+        }
+
+        return JsonResponse({
+            'success': True,
+            'otp': otp_code,
+            'target': target,
+            'message': f"Verification OTP delivered to {target}: {otp_code}"
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_POST
+def verify_registration_otp_api(request):
+    """Verifies the 6-digit OTP and completes Farmer Registration."""
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        entered_otp = data.get('otp', '').strip()
+        session_otp = request.session.get('farmer_reg_otp')
+        payload = request.session.get('farmer_reg_payload')
+
+        if not session_otp or not payload:
+            return JsonResponse({'success': False, 'error': 'OTP expired or session not found. Please request a new OTP.'}, status=400)
+
+        if entered_otp != session_otp:
+            return JsonResponse({'success': False, 'error': 'Invalid OTP code. Please enter the correct 6-digit verification code.'}, status=400)
+
+        base_username = payload['phone_number'] if payload['method'] == 'phone' else payload['email'].split('@')[0]
+        base_username = ''.join(c for c in base_username if c.isalnum() or c in '_-')[:20]
+        if not base_username:
+            base_username = "farmer"
+
+        username = base_username
+        suffix = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}_{suffix}"
+            suffix += 1
+
+        user = User.objects.create_user(
+            username=username,
+            email=payload.get('email', ''),
+            password=payload['password'],
+            first_name=payload['full_name']
+        )
+
+        FarmerProfile.objects.create(
+            user=user,
+            phone_number=payload.get('phone_number') or None,
+            farm_location=payload.get('farm_location', 'Local Farm'),
+            primary_crop=payload.get('primary_crop', 'Wheat'),
+            verification_method=payload.get('method', 'phone'),
+            is_verified=True
+        )
+
+        request.session.pop('farmer_reg_otp', None)
+        request.session.pop('farmer_reg_payload', None)
+
+        login(request, user)
+
+        return JsonResponse({
+            'success': True,
+            'message': f"Account verified successfully! Welcome to AgriOptima, {user.first_name}!",
+            'redirect_url': '/'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+def logout_view(request):
+    """Signs out the currently logged-in farmer."""
+    logout(request)
+    messages.info(request, "You have been logged out safely.")
+    return redirect('dashboard')
+
 

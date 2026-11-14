@@ -17,4 +17,9 @@ urlpatterns = [
     path('api/optimize-zone/', views.optimize_zone_api_view, name='optimize_zone_api'),
     path('history/', views.history_view, name='history'),
     path('methodology/', views.research_view, name='research'),
+    path('auth/login/', views.login_view, name='login'),
+    path('auth/register/', views.register_view, name='register'),
+    path('auth/logout/', views.logout_view, name='logout'),
+    path('api/auth/send-otp/', views.send_registration_otp_api, name='send_registration_otp_api'),
+    path('api/auth/verify-otp/', views.verify_registration_otp_api, name='verify_registration_otp_api'),
 ]

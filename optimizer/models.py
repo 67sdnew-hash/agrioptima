@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class OptimizationRecord(models.Model):
     CROP_CHOICES = [
@@ -126,4 +127,18 @@ class CommunityChatMessage(models.Model):
 
     def __str__(self):
         return f"[{self.channel}] {self.author_name}: {self.message[:30]}"
+
+
+class FarmerProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='farmer_profile')
+    phone_number = models.CharField(max_length=25, unique=True, null=True, blank=True)
+    farm_location = models.CharField(max_length=150, default="Local Farm")
+    primary_crop = models.CharField(max_length=50, default="Wheat")
+    verification_method = models.CharField(max_length=20, default='phone')
+    is_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} ({self.phone_number or self.user.email})"
+
 

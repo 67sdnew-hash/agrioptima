@@ -409,3 +409,104 @@ class CommunityFeatureTests(TestCase):
         self.assertTrue(data['success'])
         self.assertGreaterEqual(len(data['messages']), 1)
 
+
+class FarmerAuthTests(TestCase):
+    def test_phone_registration_with_otp_and_login(self):
+        # 1. Send OTP for phone registration
+        send_payload = {
+            'method': 'phone',
+            'full_name': 'Kuldeep Sandhu',
+            'phone_number': '+919876543210',
+            'email': '',
+            'farm_location': 'Moga, Punjab',
+            'primary_crop': 'Wheat',
+            'password': 'safe_farm_password_123'
+        }
+        res_send = self.client.post(
+            reverse('send_registration_otp_api'),
+            data=json.dumps(send_payload),
+            content_type='application/json'
+        )
+        self.assertEqual(res_send.status_code, 200)
+        send_data = res_send.json()
+        self.assertTrue(send_data['success'])
+        self.assertEqual(len(send_data['otp']), 6)
+
+        # 2. Verify with incorrect OTP
+        res_bad = self.client.post(
+            reverse('verify_registration_otp_api'),
+            data=json.dumps({'otp': '000000'}),
+            content_type='application/json'
+        )
+        self.assertEqual(res_bad.status_code, 400)
+        self.assertFalse(res_bad.json()['success'])
+
+        # 3. Verify with correct OTP
+        res_verify = self.client.post(
+            reverse('verify_registration_otp_api'),
+            data=json.dumps({'otp': send_data['otp']}),
+            content_type='application/json'
+        )
+        self.assertEqual(res_verify.status_code, 200)
+        self.assertTrue(res_verify.json()['success'])
+
+        # 4. Check user created in database
+        from django.contrib.auth.models import User
+        from optimizer.models import FarmerProfile
+        user = User.objects.filter(first_name='Kuldeep Sandhu').first()
+        self.assertIsNotNone(user)
+        self.assertEqual(user.farmer_profile.phone_number, '+919876543210')
+        self.assertEqual(user.farmer_profile.primary_crop, 'Wheat')
+
+        # 5. Log out
+        self.client.logout()
+
+        # 6. Log back in with Phone Number + password
+        res_login_phone = self.client.post(reverse('login'), {
+            'identifier': '+919876543210',
+            'password': 'safe_farm_password_123'
+        }, follow=True)
+        self.assertEqual(res_login_phone.status_code, 200)
+        self.assertTrue(res_login_phone.context['user'].is_authenticated)
+
+    def test_email_registration_and_login(self):
+        # 1. Send OTP for email registration
+        send_payload = {
+            'method': 'email',
+            'full_name': 'Claire Lefebvre',
+            'phone_number': '',
+            'email': 'claire@ferme-beauce.fr',
+            'farm_location': 'Chartres, France',
+            'primary_crop': 'Wheat',
+            'password': 'france_agri_secure_pass'
+        }
+        res_send = self.client.post(
+            reverse('send_registration_otp_api'),
+            data=json.dumps(send_payload),
+            content_type='application/json'
+        )
+        self.assertEqual(res_send.status_code, 200)
+        send_data = res_send.json()
+        self.assertTrue(send_data['success'])
+
+        # 2. Verify OTP
+        res_verify = self.client.post(
+            reverse('verify_registration_otp_api'),
+            data=json.dumps({'otp': send_data['otp']}),
+            content_type='application/json'
+        )
+        self.assertEqual(res_verify.status_code, 200)
+        self.assertTrue(res_verify.json()['success'])
+
+        # 3. Log out
+        self.client.logout()
+
+        # 4. Log in with Email + Password
+        res_login_email = self.client.post(reverse('login'), {
+            'identifier': 'claire@ferme-beauce.fr',
+            'password': 'france_agri_secure_pass'
+        }, follow=True)
+        self.assertEqual(res_login_email.status_code, 200)
+        self.assertTrue(res_login_email.context['user'].is_authenticated)
+
+
