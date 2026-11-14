@@ -440,6 +440,7 @@
             <span class="slide-counter" id="slideIndicator">1 / 24</span>
             <button class="btn-nav" onclick="nextSlide()">Next ▶</button>
             <button class="btn-nav primary" onclick="toggleFullScreen()">⛶ Fullscreen</button>
+            <a href="{% url 'download_presentation_pdf' %}" class="btn-nav" style="background:#2D6A4F; text-decoration:none;" target="_blank">📄 Download PDF</a>
             <a href="{% url 'download_presentation' %}" class="btn-nav" style="background:#A04728; text-decoration:none;">📥 Download PPTX</a>
             <a href="{% url 'dashboard' %}" class="btn-nav" style="text-decoration:none;">🌐 Live App</a>
         </div>

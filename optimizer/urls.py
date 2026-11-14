@@ -26,4 +26,5 @@ urlpatterns = [
     path('api/ndvi-satellite/', views.ndvi_satellite_api_view, name='ndvi_satellite_api'),
     path('presentation/', views.presentation_view, name='presentation'),
     path('presentation/download/', views.download_presentation_pptx, name='download_presentation'),
+    path('presentation/download/pdf/', views.download_presentation_pdf, name='download_presentation_pdf'),
 ]

@@ -574,6 +574,12 @@ class LeafDoctorAndNDVITests(TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res['Content-Type'], 'application/vnd.openxmlformats-officedocument.presentationml.presentation')
 
+    def test_presentation_download_pdf_view(self):
+        res = self.client.get(reverse('download_presentation_pdf'))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/pdf')
+
+
 
 
 

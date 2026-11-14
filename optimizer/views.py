@@ -909,5 +909,17 @@ def download_presentation_pptx(request):
     return HttpResponse("Presentation file not found.", status=404)
 
 
+def download_presentation_pdf(request):
+    """Serves the generated PDF (.pdf) presentation for download."""
+    pdf_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'AgriOptima_Project_Presentation.pdf')
+    if os.path.exists(pdf_path):
+        with open(pdf_path, 'rb') as f:
+            response = HttpResponse(f.read(), content_type='application/pdf')
+            response['Content-Disposition'] = 'inline; filename="AgriOptima_Project_Presentation.pdf"'
+            return response
+    return HttpResponse("Presentation PDF file not found.", status=404)
+
+
+
 
 
