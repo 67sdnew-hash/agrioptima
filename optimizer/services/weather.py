@@ -2,9 +2,11 @@
 AgriOptima - Hyper-Local Weather & Climate Risk Service
 Queries the Open-Meteo Global Weather API to calculate 14-day cumulative rainfall,
 temperature profiles, and fertilizer leaching / run-off risks.
+Includes IP-based fallback geolocation and city search geocoding.
 """
 
 import urllib.request
+import urllib.parse
 import json
 from typing import Dict, Any
 
@@ -17,7 +19,88 @@ DEFAULT_PRESETS = {
     'Sao Paulo, Brazil': {'lat': -23.5505, 'lon': -46.6333},
 }
 
-def fetch_weather_forecast(lat: float, lon: float) -> Dict[str, Any]:
+def geolocate_ip(client_ip: str = None) -> Dict[str, Any]:
+    """
+    Resolves client approximate location (latitude, longitude, city, country)
+    via IP address lookup when browser GPS is unavailable or blocked.
+    """
+    try:
+        url = "https://ipwho.is/"
+        if client_ip and client_ip not in ('127.0.0.1', '::1', 'localhost'):
+            url = f"https://ipwho.is/{client_ip}"
+
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'AgriOptima-Precision-Agriculture/1.0'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
+
+        if data.get('success', False) or 'latitude' in data:
+            city = data.get('city', '')
+            region = data.get('region', '')
+            country = data.get('country', '')
+            loc_label = f"{city}, {region}, {country}".strip(', ')
+            return {
+                'success': True,
+                'latitude': float(data['latitude']),
+                'longitude': float(data['longitude']),
+                'location_name': loc_label or "Detected Region",
+                'city': city,
+                'country': country
+            }
+    except Exception as e:
+        pass
+
+    # Default fallback to Punjab agriculture hub
+    return {
+        'success': False,
+        'latitude': 31.1471,
+        'longitude': 75.3412,
+        'location_name': 'Punjab, India (Preset)',
+        'city': 'Punjab',
+        'country': 'India'
+    }
+
+
+def geocode_city_name(query: str) -> Dict[str, Any]:
+    """
+    Geocodes a user-entered city/town/district name via Open-Meteo Geocoding API.
+    """
+    try:
+        encoded_query = urllib.parse.quote(query.strip())
+        url = f"https://geocoding-api.open-meteo.com/v1/search?name={encoded_query}&count=1&language=en&format=json"
+
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'AgriOptima-Precision-Agriculture/1.0'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
+
+        results = data.get('results', [])
+        if results:
+            first = results[0]
+            name = first.get('name', query)
+            admin1 = first.get('admin1', '')
+            country = first.get('country', '')
+            label_parts = [p for p in (name, admin1, country) if p]
+            return {
+                'success': True,
+                'latitude': float(first['latitude']),
+                'longitude': float(first['longitude']),
+                'location_name': ', '.join(label_parts)
+            }
+    except Exception as e:
+        pass
+
+    return {
+        'success': False,
+        'error': f"Location '{query}' not found."
+    }
+
+
+def fetch_weather_forecast(lat: float, lon: float, location_name: str = None) -> Dict[str, Any]:
     """
     Fetches real-time weather & 14-day precipitation projections from Open-Meteo.
     """
@@ -63,8 +146,9 @@ def fetch_weather_forecast(lat: float, lon: float) -> Dict[str, Any]:
 
         return {
             'success': True,
-            'latitude': lat,
-            'longitude': lon,
+            'latitude': round(lat, 4),
+            'longitude': round(lon, 4),
+            'location_name': location_name or f"Lat: {lat:.2f}°, Lon: {lon:.2f}°",
             'current_temp': current_temp,
             'current_humidity': current_humidity,
             'total_14d_precip_mm': round(total_14d_precip, 1),
@@ -82,8 +166,9 @@ def fetch_weather_forecast(lat: float, lon: float) -> Dict[str, Any]:
         return {
             'success': False,
             'error': str(e),
-            'latitude': lat,
-            'longitude': lon,
+            'latitude': round(lat, 4),
+            'longitude': round(lon, 4),
+            'location_name': location_name or f"Lat: {lat:.2f}°, Lon: {lon:.2f}°",
             'current_temp': 24.0,
             'current_humidity': 65.0,
             'total_14d_precip_mm': 45.0,

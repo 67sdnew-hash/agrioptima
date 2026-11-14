@@ -35,7 +35,10 @@
                 <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
                     <span>Field Location & Topography</span>
                 </h3>
-                <span class="text-[11px] text-slate-400">Click map to relocate zones</span>
+                <button type="button" id="btnLocateFarm" onclick="locateMyFarm()" class="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-bold transition flex items-center space-x-1">
+                    <span>Center on My Location</span>
+                    <span>📍</span>
+                </button>
             </div>
             <div id="farmMap" class="w-full h-80 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-inner z-10"></div>
             <p class="text-[11px] text-slate-400 italic">
@@ -254,12 +257,61 @@
     let markers = [];
     let latestGeoJson = null;
 
-    const baseLat = 31.1471;
-    const baseLon = 75.3412;
+    let baseLat = 31.1471;
+    let baseLon = 75.3412;
 
     document.addEventListener('DOMContentLoaded', function () {
         initFarmMap();
+        locateMyFarm(true); // silent auto-center on load
     });
+
+    function locateMyFarm(silent = false) {
+        const btn = document.getElementById('btnLocateFarm');
+        if (btn && !silent) btn.innerHTML = `<span>Locating...</span> <span class="animate-spin inline-block">⌛</span>`;
+
+        function applyMapCenter(lat, lon, label) {
+            baseLat = lat;
+            baseLon = lon;
+            if (map) {
+                map.setView([lat, lon], 14);
+                updateMapMarkers();
+            }
+            if (btn) btn.innerHTML = `<span>Center on My Location</span> <span>📍</span>`;
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    applyMapCenter(pos.coords.latitude, pos.coords.longitude, "GPS Location");
+                },
+                (err) => {
+                    // Fall back to server-side IP geolocation
+                    fetch('/api/weather/?auto=true')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.latitude && data.longitude) {
+                                applyMapCenter(data.latitude, data.longitude, data.location_name);
+                            }
+                        })
+                        .catch(() => {
+                            if (btn) btn.innerHTML = `<span>Center on My Location</span> <span>📍</span>`;
+                        });
+                },
+                { timeout: 4000, maximumAge: 300000, enableHighAccuracy: false }
+            );
+        } else {
+            fetch('/api/weather/?auto=true')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.latitude && data.longitude) {
+                        applyMapCenter(data.latitude, data.longitude, data.location_name);
+                    }
+                })
+                .catch(() => {
+                    if (btn) btn.innerHTML = `<span>Center on My Location</span> <span>📍</span>`;
+                });
+        }
+    }
 
     function initFarmMap() {
         map = L.map('farmMap').setView([baseLat, baseLon], 14);

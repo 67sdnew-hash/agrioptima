@@ -29,27 +29,44 @@
 
     <!-- Weather & Climate Risk Intelligence Widget -->
     <div class="p-6 glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-4" data-tilt>
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div class="flex items-center space-x-2.5">
-                <div class="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-base">
+                <div class="w-9 h-9 rounded-2xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-lg">
                     🌦️
                 </div>
                 <div>
-                    <h2 class="text-sm font-bold text-slate-900 dark:text-white">Hyper-Local Weather & Climate Leaching Risk</h2>
-                    <p class="text-[11px] text-slate-400">Live 14-day precipitation forecast via Open-Meteo API</p>
+                    <div class="flex items-center space-x-2">
+                        <h2 class="text-sm font-bold text-slate-900 dark:text-white">Hyper-Local Weather & Climate Leaching Risk</h2>
+                        <span id="locBadge" class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200/60 dark:border-emerald-800/60 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                            <span>📍</span>
+                            <span id="locLabel">Locating Farm...</span>
+                        </span>
+                    </div>
+                    <p class="text-[11px] text-slate-400">Live 14-day precipitation forecast & nitrate run-off risk</p>
                 </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <select id="weatherPresetSelect" onchange="onWeatherPresetChange(this.value)" class="text-xs bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-3 py-1.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-1 focus:ring-emerald-500">
-                    <option value="31.1471,75.3412">Punjab, India (Grain Belt)</option>
-                    <option value="42.0308,-93.6319">Iowa (Corn Belt), USA</option>
-                    <option value="36.7783,-119.4179">Central Valley, California</option>
-                    <option value="30.8761,31.0004">Nile Delta, Egypt</option>
-                    <option value="51.4543,-0.9781">Thames Valley, UK</option>
-                    <option value="-23.5505,-46.6333">Sao Paulo, Brazil</option>
+
+            <!-- Location Search & Auto-Detect Controls -->
+            <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                <div class="relative flex-1 sm:w-56">
+                    <input type="text" id="citySearchInput" placeholder="Search city or district..." onkeydown="if(event.key==='Enter'){searchCityLocation(); event.preventDefault();}" class="w-full text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-1.5 text-slate-800 dark:text-slate-200 font-medium focus:ring-1 focus:ring-emerald-500">
+                    <button type="button" onclick="searchCityLocation()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-bold">
+                        🔍
+                    </button>
+                </div>
+
+                <select id="weatherPresetSelect" onchange="onWeatherPresetChange(this.value)" class="text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-1 focus:ring-emerald-500">
+                    <option value="" disabled selected>Or Pick Preset Region...</option>
+                    <option value="31.1471,75.3412,Punjab, India">Punjab, India (Grain Belt)</option>
+                    <option value="42.0308,-93.6319,Iowa, USA">Iowa (Corn Belt), USA</option>
+                    <option value="36.7783,-119.4179,Central Valley, CA">Central Valley, California</option>
+                    <option value="30.8761,31.0004,Nile Delta, Egypt">Nile Delta, Egypt</option>
+                    <option value="51.4543,-0.9781,Thames Valley, UK">Thames Valley, UK</option>
+                    <option value="-23.5505,-46.6333,Sao Paulo, Brazil">Sao Paulo, Brazil</option>
                 </select>
-                <button type="button" onclick="detectGPSLocation()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition flex items-center space-x-1">
-                    <span>Detect GPS</span>
+
+                <button type="button" id="btnDetectGPS" onclick="detectUserLocation()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition flex items-center space-x-1.5">
+                    <span>Detect My Location</span>
                     <span>📍</span>
                 </button>
             </div>
@@ -307,58 +324,115 @@
 {% block extra_scripts %}
 <script src="{% static 'js/soil_3d_terrain.js' %}"></script>
 <script>
-    // Initialize 3D Soil Digital Twin Scene
+    // Initialize 3D Soil Digital Twin Scene & Location Weather
     document.addEventListener('DOMContentLoaded', function () {
         initSoil3DField('soil3DCanvasContainer');
-        // Fetch initial weather for default preset
-        loadWeatherData(31.1471, 75.3412);
+        // Initial auto-detection
+        detectUserLocation();
     });
 
     let currentRecommendedRainfall = 750.0;
 
-    function loadWeatherData(lat, lon) {
-        fetch(`/api/weather/?lat=${lat}&lon=${lon}`)
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById('wTemp').textContent = `${data.current_temp} °C`;
-                document.getElementById('w14dRain').textContent = `${data.total_14d_precip_mm} mm`;
-                document.getElementById('wSeasonRain').textContent = `${data.recommended_rainfall_mm} mm`;
-                
-                const riskElem = document.getElementById('wRisk');
-                riskElem.textContent = data.leaching_risk;
-                if (data.risk_color === 'red') {
-                    riskElem.className = 'text-xs font-black text-rose-600 uppercase mt-0.5';
-                } else if (data.risk_color === 'amber') {
-                    riskElem.className = 'text-xs font-black text-amber-600 uppercase mt-0.5';
-                } else {
-                    riskElem.className = 'text-xs font-black text-emerald-600 uppercase mt-0.5';
-                }
+    function applyWeatherData(data) {
+        if (!data || !data.success) {
+            if (data && data.error) console.warn("Weather error:", data.error);
+            return;
+        }
 
-                document.getElementById('wRiskMsg').textContent = `AgriOptima Advisory: ${data.risk_message}`;
-                currentRecommendedRainfall = data.recommended_rainfall_mm;
-            })
+        document.getElementById('locLabel').textContent = data.location_name || 'Detected Farm';
+        document.getElementById('wTemp').textContent = `${data.current_temp} °C`;
+        document.getElementById('w14dRain').textContent = `${data.total_14d_precip_mm} mm`;
+        document.getElementById('wSeasonRain').textContent = `${data.recommended_rainfall_mm} mm`;
+        
+        const riskElem = document.getElementById('wRisk');
+        riskElem.textContent = data.leaching_risk;
+        if (data.risk_color === 'red') {
+            riskElem.className = 'text-xs font-black text-rose-600 uppercase mt-0.5';
+        } else if (data.risk_color === 'amber') {
+            riskElem.className = 'text-xs font-black text-amber-600 uppercase mt-0.5';
+        } else {
+            riskElem.className = 'text-xs font-black text-emerald-600 uppercase mt-0.5';
+        }
+
+        document.getElementById('wRiskMsg').textContent = `AgriOptima Advisory: ${data.risk_message}`;
+        currentRecommendedRainfall = data.recommended_rainfall_mm;
+    }
+
+    function loadWeatherByUrl(url) {
+        fetch(url)
+            .then(res => res.json())
+            .then(data => applyWeatherData(data))
             .catch(err => {
                 console.error("Weather load error", err);
             });
     }
 
     function onWeatherPresetChange(val) {
+        if (!val) return;
         const parts = val.split(',');
-        loadWeatherData(parseFloat(parts[0]), parseFloat(parts[1]));
+        const lat = parseFloat(parts[0]);
+        const lon = parseFloat(parts[1]);
+        const name = parts[2] || '';
+        loadWeatherByUrl(`/api/weather/?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name)}`);
     }
 
-    function detectGPSLocation() {
+    function searchCityLocation() {
+        const input = document.getElementById('citySearchInput');
+        const query = input.value.trim();
+        if (!query) return;
+
+        document.getElementById('locLabel').textContent = `Searching '${query}'...`;
+        fetch(`/api/weather/?city=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    alert(data.error || "Location not found.");
+                    return;
+                }
+                applyWeatherData(data);
+            })
+            .catch(err => {
+                console.error("City search error", err);
+            });
+    }
+
+    function detectUserLocation() {
+        const btn = document.getElementById('btnDetectGPS');
+        const label = document.getElementById('locLabel');
+        if (btn) btn.innerHTML = `<span>Locating...</span> <span class="animate-spin inline-block">⌛</span>`;
+        label.textContent = "Acquiring coordinates...";
+
+        function finalizeLocation(url) {
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    applyWeatherData(data);
+                    if (btn) btn.innerHTML = `<span>Detect My Location</span> <span>📍</span>`;
+                })
+                .catch(err => {
+                    console.error("Location resolution error", err);
+                    if (btn) btn.innerHTML = `<span>Detect My Location</span> <span>📍</span>`;
+                });
+        }
+
+        // Try browser GPS first with 4-second timeout
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    loadWeatherData(pos.coords.latitude, pos.coords.longitude);
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    finalizeLocation(`/api/weather/?lat=${lat}&lon=${lon}&name=GPS Location (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`);
                 },
                 (err) => {
-                    alert("Location access denied or unavailable. Using agricultural preset.");
-                }
+                    // Browser GPS denied or timed out -> Seamlessly fall back to IP Geolocation
+                    console.log("Browser GPS unavailable/denied, falling back to IP geolocation:", err.message);
+                    finalizeLocation('/api/weather/?auto=true');
+                },
+                { timeout: 4000, maximumAge: 300000, enableHighAccuracy: false }
             );
         } else {
-            alert("Geolocation is not supported by your browser.");
+            // Geolocation unsupported -> Seamless IP fallback
+            finalizeLocation('/api/weather/?auto=true');
         }
     }
 

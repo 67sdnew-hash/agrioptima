@@ -159,12 +159,26 @@ class FertilizerOptimizationTests(TestCase):
         self.assertIn(f"AGRI-{record.id:05d}", response['Content-Disposition'])
 
     def test_weather_proxy_service(self):
+        # 1. Lat/Lon query
         response = self.client.get(reverse('weather_proxy'), {'lat': 31.1471, 'lon': 75.3412})
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn('total_14d_precip_mm', data)
         self.assertIn('leaching_risk', data)
         self.assertIn('recommended_rainfall_mm', data)
+
+        # 2. Auto IP geolocation query
+        res_auto = self.client.get(reverse('weather_proxy'), {'auto': 'true'})
+        self.assertEqual(res_auto.status_code, 200)
+        data_auto = res_auto.json()
+        self.assertIn('location_name', data_auto)
+        self.assertIn('recommended_rainfall_mm', data_auto)
+
+        # 3. City query
+        res_city = self.client.get(reverse('weather_proxy'), {'city': 'Kolkata'})
+        self.assertEqual(res_city.status_code, 200)
+        data_city = res_city.json()
+        self.assertTrue('location_name' in data_city or 'error' in data_city)
 
     def test_multi_zone_api_optimization(self):
         payload = {

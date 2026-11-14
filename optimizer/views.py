@@ -119,14 +119,49 @@ def export_pdf_report_view(request, record_id: int):
 
 @require_GET
 def weather_proxy_view(request):
-    """API endpoint to fetch 14-day weather & leaching risk for given lat/lon."""
-    try:
-        lat = float(request.GET.get('lat', 31.1471))
-        lon = float(request.GET.get('lon', 75.3412))
-    except (ValueError, TypeError):
-        lat, lon = 31.1471, 75.3412
+    """
+    API endpoint to fetch weather & leaching risk.
+    Supports:
+    1. Explicit lat & lon (?lat=...&lon=...)
+    2. City / town query (?city=Kolkata)
+    3. Auto IP detection (?auto=true)
+    """
+    from .services.weather import geolocate_ip, geocode_city_name
 
-    weather_data = fetch_weather_forecast(lat, lon)
+    city_query = request.GET.get('city', '').strip()
+    auto_detect = request.GET.get('auto', '').lower() in ('true', '1', 'yes')
+
+    location_name = None
+
+    if city_query:
+        geo = geocode_city_name(city_query)
+        if geo['success']:
+            lat = geo['latitude']
+            lon = geo['longitude']
+            location_name = geo['location_name']
+        else:
+            return JsonResponse({'success': False, 'error': f"Location '{city_query}' not found."})
+    elif auto_detect:
+        # Extract client IP from proxy headers (Render X-Forwarded-For)
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            client_ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            client_ip = request.META.get('REMOTE_ADDR')
+
+        geo = geolocate_ip(client_ip)
+        lat = geo['latitude']
+        lon = geo['longitude']
+        location_name = geo['location_name']
+    else:
+        try:
+            lat = float(request.GET.get('lat', 31.1471))
+            lon = float(request.GET.get('lon', 75.3412))
+            location_name = request.GET.get('name')
+        except (ValueError, TypeError):
+            lat, lon = 31.1471, 75.3412
+
+    weather_data = fetch_weather_forecast(lat, lon, location_name=location_name)
     return JsonResponse(weather_data)
 
 
