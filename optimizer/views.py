@@ -17,6 +17,7 @@ from .services.pdf_generator import generate_agronomist_pdf, calculate_commercia
 from .services.weather import fetch_weather_forecast, DEFAULT_PRESETS
 from .services.split_schedule import calculate_split_schedule, generate_ics_calendar, get_google_calendar_url
 from .services.ai_agronomist import answer_agronomic_query
+from .services.notification import dispatch_email_otp, dispatch_sms_otp
 
 
 def dashboard_view(request):
@@ -754,11 +755,18 @@ def send_registration_otp_api(request):
             'password': password
         }
 
+        # Dispatch OTP to respective channel
+        if method == 'email':
+            dispatch_res = dispatch_email_otp(email, otp_code, full_name)
+        else:
+            dispatch_res = dispatch_sms_otp(phone_number, otp_code, full_name)
+
         return JsonResponse({
             'success': True,
             'otp': otp_code,
             'target': target,
-            'message': f"Verification OTP delivered to {target}: {otp_code}"
+            'channel': method,
+            'message': dispatch_res.get('message', f"Verification OTP delivered to {target}")
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)

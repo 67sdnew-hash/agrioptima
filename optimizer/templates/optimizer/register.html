@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Farmer Registration & OTP Verification — AgriOptima 3D{% endblock %}
+{% block title %}Farmer Registration & Verification — AgriOptima 3D{% endblock %}
 
 {% block content %}
 <div class="max-w-lg mx-auto my-6 space-y-6">
@@ -13,14 +13,14 @@
             </div>
             <h1 class="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Create Farmer Account</h1>
             <p class="text-xs text-slate-500 dark:text-slate-400">
-                Join our precision agriculture community. Verify with instant SMS OTP on your phone or via email.
+                Join our precision agriculture community. Receive verification OTP directly to your mobile message notification or email inbox.
             </p>
         </div>
 
         <!-- Registration Method Switcher Tabs -->
         <div class="flex items-center p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl text-xs font-bold">
             <button type="button" id="tabPhone" onclick="setRegMethod('phone')" class="flex-1 py-2 rounded-xl text-center transition bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm flex items-center justify-center space-x-1.5">
-                <span>📱</span> <span>Phone Number (OTP)</span>
+                <span>📱</span> <span>Phone Message (SMS)</span>
             </button>
             <button type="button" id="tabEmail" onclick="setRegMethod('email')" class="flex-1 py-2 rounded-xl text-center transition text-slate-600 dark:text-slate-400 hover:text-slate-900 flex items-center justify-center space-x-1.5">
                 <span>✉️</span> <span>Email Address</span>
@@ -28,16 +28,30 @@
         </div>
 
         <!-- Notification Banner -->
-        <div id="otpBanner" class="hidden p-4 rounded-2xl text-xs space-y-1 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shadow-sm">
+        <div id="otpBanner" class="hidden p-4 rounded-2xl text-xs space-y-2 bg-emerald-50 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 shadow-sm">
             <div class="font-bold flex items-center space-x-2">
-                <span>📲</span> <span id="otpBannerTitle">Verification OTP Delivered!</span>
+                <span id="otpBannerIcon">📲</span>
+                <span id="otpBannerTitle">Verification Code Dispatched!</span>
             </div>
             <p id="otpBannerMessage" class="text-[11px] leading-relaxed"></p>
+            
+            <!-- Expandable Dispatch Log for testing flexibility -->
+            <div class="pt-2 border-t border-emerald-200/60 dark:border-emerald-800/60 text-[10px]">
+                <button type="button" onclick="toggleDispatchLog()" class="font-bold underline text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                    <span>📡 View Sent Dispatch Details / Message Tray</span>
+                    <span>▼</span>
+                </button>
+                <div id="dispatchLogBox" class="hidden mt-2 p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-emerald-200 dark:border-emerald-800 font-mono text-[10px] space-y-1">
+                    <div><strong>Channel:</strong> <span id="dispChannel"></span></div>
+                    <div><strong>Recipient:</strong> <span id="dispTarget"></span></div>
+                    <div><strong>Delivered Code:</strong> <span id="dispOtp" class="font-bold text-emerald-600 dark:text-emerald-400"></span></div>
+                </div>
+            </div>
         </div>
 
         <div id="regError" class="hidden p-3 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-semibold"></div>
 
-        <!-- Step 1: Information Details Form -->
+        <!-- Step 1: Farmer Details Form -->
         <form id="regForm" onsubmit="handleSendOtp(event)" class="space-y-4">
             <div>
                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Full Name / Farmer Handle</label>
@@ -51,7 +65,7 @@
             <div id="fieldPhone">
                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
                     <span>Mobile Phone Number</span>
-                    <span class="text-[10px] text-emerald-600 font-bold">OTP will be delivered here</span>
+                    <span class="text-[10px] text-emerald-600 font-bold">OTP sent to message notifications</span>
                 </label>
                 <div class="relative flex items-center">
                     <span class="absolute left-3.5 text-slate-400 text-sm">📞</span>
@@ -62,7 +76,7 @@
             <div id="fieldEmail" class="hidden">
                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center justify-between">
                     <span>Email Address</span>
-                    <span class="text-[10px] text-emerald-600 font-bold">Verification code sent to mail</span>
+                    <span class="text-[10px] text-emerald-600 font-bold">OTP sent directly to your mail id</span>
                 </label>
                 <div class="relative flex items-center">
                     <span class="absolute left-3.5 text-slate-400 text-sm">✉️</span>
@@ -92,21 +106,23 @@
                 <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Create Password (min 6 characters)</label>
                 <div class="relative flex items-center">
                     <span class="absolute left-3.5 text-slate-400 text-sm">🔒</span>
-                    <input type="password" id="regPassword" required minlength="6" placeholder="Choose a password you'll use to log in next time" class="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 shadow-inner">
+                    <input type="password" id="regPassword" required minlength="6" placeholder="Password to sign in with phone/email next time" class="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 shadow-inner">
                 </div>
             </div>
 
             <button type="submit" id="btnSendOtp" class="w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/25 transition-all transform hover:scale-[1.01]">
-                <span id="btnSendOtpText">Send 6-Digit Verification OTP 📲</span>
+                <span id="btnSendOtpText">Send Verification Code 📲</span>
             </button>
         </form>
 
-        <!-- Step 2: OTP Verification Box (Revealed after OTP is sent) -->
+        <!-- Step 2: OTP Verification Box (Revealed after code is sent) -->
         <div id="otpVerificationSection" class="hidden pt-5 border-t border-slate-200 dark:border-slate-800 space-y-4">
             <div class="text-center space-y-1">
                 <span class="text-2xl">🔐</span>
                 <h3 class="text-sm font-bold text-slate-900 dark:text-white">Enter 6-Digit Verification Code</h3>
-                <p class="text-[11px] text-slate-400">Please enter the OTP delivered to your phone/email to verify registration.</p>
+                <p id="otpPromptMessage" class="text-[11px] text-slate-400">
+                    Check your mobile phone message notification or email inbox for the 6-digit code.
+                </p>
             </div>
 
             <form onsubmit="handleVerifyOtp(event)" class="space-y-3">
@@ -116,6 +132,7 @@
                         id="inputOtp" 
                         maxlength="6" 
                         required 
+                        autocomplete="one-time-code"
                         placeholder="• • • • • •" 
                         class="w-48 py-2.5 text-center text-xl font-mono tracking-widest font-black rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-emerald-500 text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-emerald-500/20 shadow-md">
                 </div>
@@ -159,7 +176,7 @@
             tabEmail.className = "flex-1 py-2 rounded-xl text-center transition text-slate-600 dark:text-slate-400 hover:text-slate-900 flex items-center justify-center space-x-1.5";
             fieldPhone.classList.remove('hidden');
             fieldEmail.classList.add('hidden');
-            btnText.textContent = "Send 6-Digit Phone OTP 📲";
+            btnText.textContent = "Send Verification OTP to Phone 📲";
         } else {
             tabEmail.className = "flex-1 py-2 rounded-xl text-center transition bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-sm flex items-center justify-center space-x-1.5";
             tabPhone.className = "flex-1 py-2 rounded-xl text-center transition text-slate-600 dark:text-slate-400 hover:text-slate-900 flex items-center justify-center space-x-1.5";
@@ -169,13 +186,44 @@
         }
     }
 
+    function toggleDispatchLog() {
+        const box = document.getElementById('dispatchLogBox');
+        if (box) box.classList.toggle('hidden');
+    }
+
+    function fireDeviceMessageNotification(otp, target) {
+        if ("Notification" in window) {
+            if (Notification.permission === "granted") {
+                new Notification("📲 SMS from AgriOptima", {
+                    body: `Your farmer verification OTP code is: ${otp}. Valid for 10 minutes.`,
+                    icon: "/static/images/agrioptima_logo.svg",
+                    tag: "agrioptima-otp"
+                });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("📲 SMS from AgriOptima", {
+                            body: `Your farmer verification OTP code is: ${otp}. Valid for 10 minutes.`,
+                            icon: "/static/images/agrioptima_logo.svg",
+                            tag: "agrioptima-otp"
+                        });
+                    }
+                });
+            }
+        }
+    }
+
     async function handleSendOtp(e) {
         if (e) e.preventDefault();
         const errDiv = document.getElementById('regError');
         const btn = document.getElementById('btnSendOtp');
         errDiv.classList.add('hidden');
         btn.disabled = true;
-        btn.innerHTML = `<span class="animate-spin inline-block mr-1">⌛</span> Sending OTP...`;
+        btn.innerHTML = `<span class="animate-spin inline-block mr-1">⌛</span> Dispatching Code...`;
+
+        if (activeMethod === 'phone' && "Notification" in window && Notification.permission === "default") {
+            try { await Notification.requestPermission(); } catch(e) {}
+        }
 
         const payload = {
             method: activeMethod,
@@ -196,31 +244,47 @@
             const data = await res.json();
 
             if (data.success) {
-                // Show notification banner with the OTP code
                 const banner = document.getElementById('otpBanner');
                 const msg = document.getElementById('otpBannerMessage');
-                msg.innerHTML = `<strong>${data.message}</strong><br/>Please enter the 6-digit code below to complete your registration.`;
+                const promptMsg = document.getElementById('otpPromptMessage');
+                const bannerIcon = document.getElementById('otpBannerIcon');
+
+                if (activeMethod === 'phone') {
+                    bannerIcon.textContent = "📲";
+                    msg.innerHTML = `Message notification dispatched to your mobile phone <strong>${data.target}</strong>. Please check your phone's notification tray / SMS inbox.`;
+                    promptMsg.textContent = `A 6-digit verification code was sent to ${data.target}. Please check your phone notifications and enter the code below.`;
+                    fireDeviceMessageNotification(data.otp, data.target);
+                } else {
+                    bannerIcon.textContent = "✉️";
+                    msg.innerHTML = `Verification email sent to your mail id <strong>${data.target}</strong>. Please check your inbox (and spam/promotions folder).`;
+                    promptMsg.textContent = `A 6-digit verification code was emailed to ${data.target}. Please check your mail inbox and enter the code below.`;
+                }
+
+                document.getElementById('dispChannel').textContent = activeMethod === 'phone' ? 'Mobile SMS Message Notification' : 'Email Mailbox Delivery';
+                document.getElementById('dispTarget').textContent = data.target;
+                document.getElementById('dispOtp').textContent = data.otp;
+
                 banner.classList.remove('hidden');
 
-                // Reveal OTP input section
                 const otpSection = document.getElementById('otpVerificationSection');
                 otpSection.classList.remove('hidden');
-                document.getElementById('inputOtp').value = data.otp; // Pre-fill for instantaneous ease of verification
+                document.getElementById('inputOtp').value = '';
+                document.getElementById('inputOtp').focus();
                 otpSection.scrollIntoView({ behavior: 'smooth' });
 
                 btn.disabled = false;
-                btn.innerHTML = `OTP Sent ✓ (Code: ${data.otp})`;
+                btn.innerHTML = `Code Dispatched ✓`;
             } else {
-                errDiv.textContent = data.error || 'Failed to send OTP.';
+                errDiv.textContent = data.error || 'Failed to dispatch verification code.';
                 errDiv.classList.remove('hidden');
                 btn.disabled = false;
-                btn.textContent = activeMethod === 'phone' ? 'Send 6-Digit Phone OTP 📲' : 'Send Verification Code to Email ✉️';
+                btn.textContent = activeMethod === 'phone' ? 'Send Verification OTP to Phone 📲' : 'Send Verification Code to Email ✉️';
             }
         } catch(err) {
-            errDiv.textContent = 'Network error sending OTP: ' + err.message;
+            errDiv.textContent = 'Network error: ' + err.message;
             errDiv.classList.remove('hidden');
             btn.disabled = false;
-            btn.textContent = 'Retry Sending OTP';
+            btn.textContent = 'Retry Sending Code';
         }
     }
 
@@ -231,7 +295,7 @@
         const btn = document.getElementById('btnVerifyOtp');
         errDiv.classList.add('hidden');
         btn.disabled = true;
-        btn.textContent = 'Verifying Account...';
+        btn.textContent = 'Verifying Code...';
 
         try {
             const res = await fetch('/api/auth/verify-otp/', {
@@ -245,7 +309,7 @@
                 btn.textContent = 'Verified! Redirecting...';
                 window.location.href = data.redirect_url || '/';
             } else {
-                errDiv.textContent = data.error || 'Invalid OTP code.';
+                errDiv.textContent = data.error || 'Invalid OTP code. Please check your phone message notification / email and try again.';
                 errDiv.classList.remove('hidden');
                 btn.disabled = false;
                 btn.textContent = 'Verify OTP & Complete Registration 🌾';
