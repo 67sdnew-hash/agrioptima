@@ -29,6 +29,7 @@
                         <th class="px-5 py-4">Prescription ($\Delta N, \Delta P, \Delta K$)</th>
                         <th class="px-5 py-4">Total Input</th>
                         <th class="px-5 py-4">Net Savings</th>
+                        <th class="px-5 py-4 text-right">Report</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -46,6 +47,12 @@
                         <td class="px-5 py-3.5 font-medium text-slate-600 dark:text-slate-400">{{ rec.total_fertilizer_kg }} kg/ha</td>
                         <td class="px-5 py-3.5 font-bold text-emerald-600 dark:text-emerald-400">
                             ${{ rec.cost_savings }} <span class="text-[10px] text-emerald-500 font-normal">({{ rec.percent_savings }}%)</span>
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            <a href="{% url 'export_pdf_report' rec.id %}" target="_blank" class="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 font-bold text-[11px] transition inline-flex items-center space-x-1">
+                                <span>PDF</span>
+                                <span>↓</span>
+                            </a>
                         </td>
                     </tr>
                     {% empty %}

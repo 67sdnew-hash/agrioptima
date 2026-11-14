@@ -1,3 +1,4 @@
+import json
 from django.test import TestCase
 from django.urls import reverse
 from optimizer.models import OptimizationRecord
@@ -8,6 +9,9 @@ from optimizer.services.optimization import (
     MAX_DELTA_P,
     MAX_DELTA_K
 )
+from optimizer.services.pdf_generator import generate_agronomist_pdf, calculate_commercial_bags
+from optimizer.services.weather import fetch_weather_forecast
+
 
 class FertilizerOptimizationTests(TestCase):
     @classmethod
@@ -115,3 +119,96 @@ class FertilizerOptimizationTests(TestCase):
         record = OptimizationRecord.objects.first()
         self.assertEqual(record.crop_type, 'Maize')
         self.assertGreater(record.predicted_yield, 0.0)
+
+    def test_commercial_bags_converter(self):
+        bags = calculate_commercial_bags(dn_kg=46.0, dp_kg=20.0, dk_kg=30.0)
+        self.assertIn('urea_bags', bags)
+        self.assertIn('dap_bags', bags)
+        self.assertIn('mop_bags', bags)
+        self.assertGreater(bags['total_bags'], 0.0)
+
+    def test_agronomist_pdf_generation_and_view(self):
+        record = OptimizationRecord.objects.create(
+            crop_type='Wheat',
+            current_nitrogen=40.0,
+            current_phosphorus=20.0,
+            current_potassium=30.0,
+            soil_ph=6.5,
+            rainfall=750.0,
+            target_yield=6.0,
+            baseline_yield=3.8,
+            predicted_yield=6.1,
+            delta_nitrogen=25.0,
+            delta_phosphorus=15.0,
+            delta_potassium=20.0,
+            total_fertilizer_kg=60.0,
+            optimized_cost=70.5,
+            blanket_cost=270.0,
+            cost_savings=199.5,
+            percent_savings=73.9,
+            is_feasible=True
+        )
+
+        pdf_bytes = generate_agronomist_pdf(record).getvalue()
+        self.assertTrue(pdf_bytes.startswith(b'%PDF-'))
+        self.assertGreater(len(pdf_bytes), 1000)
+
+        response = self.client.get(reverse('export_pdf_report', args=[record.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/pdf')
+        self.assertIn(f"AGRI-{record.id:05d}", response['Content-Disposition'])
+
+    def test_weather_proxy_service(self):
+        response = self.client.get(reverse('weather_proxy'), {'lat': 31.1471, 'lon': 75.3412})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('total_14d_precip_mm', data)
+        self.assertIn('leaching_risk', data)
+        self.assertIn('recommended_rainfall_mm', data)
+
+    def test_multi_zone_api_optimization(self):
+        payload = {
+            'zones': [
+                {
+                    'name': 'North Zone',
+                    'area_ha': 10.0,
+                    'crop_type': 'Wheat',
+                    'current_nitrogen': 40.0,
+                    'current_phosphorus': 18.0,
+                    'current_potassium': 30.0,
+                    'soil_ph': 6.2,
+                    'rainfall': 750.0,
+                    'target_yield': 6.5,
+                    'lat': 31.1471,
+                    'lon': 75.3412
+                },
+                {
+                    'name': 'South Zone',
+                    'area_ha': 20.0,
+                    'crop_type': 'Wheat',
+                    'current_nitrogen': 60.0,
+                    'current_phosphorus': 30.0,
+                    'current_potassium': 45.0,
+                    'soil_ph': 6.8,
+                    'rainfall': 750.0,
+                    'target_yield': 7.0,
+                    'lat': 31.1511,
+                    'lon': 75.3452
+                }
+            ]
+        }
+
+        response = self.client.post(
+            reverse('optimize_zone_api'),
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(len(data['zones']), 2)
+        self.assertEqual(data['summary']['total_farm_area_ha'], 30.0)
+        self.assertGreater(data['summary']['total_savings_usd'], 0.0)
+        self.assertEqual(data['geojson']['type'], 'FeatureCollection')
+        self.assertEqual(len(data['geojson']['features']), 2)

@@ -1,0 +1,449 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Multi-Zone Farm Field Mapper — AgriOptima 3D{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header Hero Banner with 3D Badge -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 sm:p-7 rounded-3xl glass-card relative overflow-hidden" data-tilt>
+        <div class="relative z-10 max-w-2xl">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 mb-3">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>Geospatial Precision Agriculture • Variable Rate Application (VRA)</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Multi-Zone Farm Field Mapper <span class="text-emerald-600 dark:text-emerald-400">GIS</span>
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Segment your farm into variable soil management zones. Compute zone-specific nutrient recipes and download standardized GeoJSON prescription files for GPS-guided tractor spreaders.
+            </p>
+        </div>
+        <div class="flex items-center space-x-3 relative z-10">
+            <button type="button" onclick="runMultiZoneOptimization()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center space-x-2">
+                <span>Optimize All Farm Zones</span>
+                <span class="text-base">⚡</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Interactive Farm Map & Zone Setup -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Interactive Leaflet Map (5 Cols) -->
+        <div class="lg:col-span-5 glass-card p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-4" data-tilt>
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+                    <span>Field Location & Topography</span>
+                </h3>
+                <span class="text-[11px] text-slate-400">Click map to relocate zones</span>
+            </div>
+            <div id="farmMap" class="w-full h-80 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-inner z-10"></div>
+            <p class="text-[11px] text-slate-400 italic">
+                *Pins show GPS coordinates of each management zone. Coordinates are embedded directly into the exported tractor VRA GeoJSON.
+            </p>
+        </div>
+
+        <!-- Zones Input Management (7 Cols) -->
+        <div class="lg:col-span-7 glass-card p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-4" data-tilt>
+            <div class="flex items-center justify-between mb-2">
+                <div>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">Soil Management Zones</h3>
+                    <p class="text-xs text-slate-400">Define acreage, current soil test values, and targets for each sector.</p>
+                </div>
+                <button type="button" onclick="addNewZoneRow()" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition flex items-center space-x-1">
+                    <span>+ Add Zone</span>
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs" id="zonesTable">
+                    <thead class="bg-slate-50/80 dark:bg-slate-800/60 uppercase font-bold text-slate-500 border-b border-slate-200/80 dark:border-slate-800 tracking-wider">
+                        <tr>
+                            <th class="px-3 py-2.5">Zone Name</th>
+                            <th class="px-3 py-2.5">Area (ha)</th>
+                            <th class="px-3 py-2.5">Crop</th>
+                            <th class="px-3 py-2.5">N-P-K (kg/ha)</th>
+                            <th class="px-3 py-2.5">pH</th>
+                            <th class="px-3 py-2.5">Target (t/ha)</th>
+                            <th class="px-2 py-2.5"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60" id="zonesTableBody">
+                        <!-- Default Row 1 -->
+                        <tr class="zone-row" data-zone-id="1">
+                            <td class="px-2 py-2">
+                                <input type="text" value="North Hillside" class="w-28 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold zone-name">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="15" step="0.5" min="0.5" class="w-16 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-area">
+                            </td>
+                            <td class="px-2 py-2">
+                                <select class="px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-crop">
+                                    <option value="Wheat" selected>Wheat</option>
+                                    <option value="Rice">Rice</option>
+                                    <option value="Maize">Maize</option>
+                                    <option value="Cotton">Cotton</option>
+                                </select>
+                            </td>
+                            <td class="px-2 py-2">
+                                <div class="flex space-x-1">
+                                    <input type="number" value="40" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-n" title="Nitrogen">
+                                    <input type="number" value="18" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-p" title="Phosphorus">
+                                    <input type="number" value="30" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-k" title="Potassium">
+                                </div>
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="6.2" step="0.1" class="w-14 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-ph">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="6.5" step="0.1" class="w-16 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-emerald-600 zone-target">
+                            </td>
+                            <td class="px-2 py-2 text-center">
+                                <button type="button" onclick="removeZoneRow(this)" class="text-rose-500 hover:text-rose-700 font-bold text-xs">✕</button>
+                            </td>
+                        </tr>
+
+                        <!-- Default Row 2 -->
+                        <tr class="zone-row" data-zone-id="2">
+                            <td class="px-2 py-2">
+                                <input type="text" value="Central Loam Flats" class="w-28 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold zone-name">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="25" step="0.5" min="0.5" class="w-16 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-area">
+                            </td>
+                            <td class="px-2 py-2">
+                                <select class="px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-crop">
+                                    <option value="Wheat" selected>Wheat</option>
+                                    <option value="Rice">Rice</option>
+                                    <option value="Maize">Maize</option>
+                                    <option value="Cotton">Cotton</option>
+                                </select>
+                            </td>
+                            <td class="px-2 py-2">
+                                <div class="flex space-x-1">
+                                    <input type="number" value="65" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-n" title="Nitrogen">
+                                    <input type="number" value="32" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-p" title="Phosphorus">
+                                    <input type="number" value="48" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-k" title="Potassium">
+                                </div>
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="6.8" step="0.1" class="w-14 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-ph">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="7.0" step="0.1" class="w-16 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-emerald-600 zone-target">
+                            </td>
+                            <td class="px-2 py-2 text-center">
+                                <button type="button" onclick="removeZoneRow(this)" class="text-rose-500 hover:text-rose-700 font-bold text-xs">✕</button>
+                            </td>
+                        </tr>
+
+                        <!-- Default Row 3 -->
+                        <tr class="zone-row" data-zone-id="3">
+                            <td class="px-2 py-2">
+                                <input type="text" value="South Terraces" class="w-28 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold zone-name">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="10" step="0.5" min="0.5" class="w-16 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-area">
+                            </td>
+                            <td class="px-2 py-2">
+                                <select class="px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-crop">
+                                    <option value="Wheat" selected>Wheat</option>
+                                    <option value="Rice">Rice</option>
+                                    <option value="Maize">Maize</option>
+                                    <option value="Cotton">Cotton</option>
+                                </select>
+                            </td>
+                            <td class="px-2 py-2">
+                                <div class="flex space-x-1">
+                                    <input type="number" value="28" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-n" title="Nitrogen">
+                                    <input type="number" value="14" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-p" title="Phosphorus">
+                                    <input type="number" value="22" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-k" title="Potassium">
+                                </div>
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="5.8" step="0.1" class="w-14 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-ph">
+                            </td>
+                            <td class="px-2 py-2">
+                                <input type="number" value="5.8" step="0.1" class="w-16 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-emerald-600 zone-target">
+                            </td>
+                            <td class="px-2 py-2 text-center">
+                                <button type="button" onclick="removeZoneRow(this)" class="text-rose-500 hover:text-rose-700 font-bold text-xs">✕</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization Results Container (Populated after solver runs) -->
+    <div id="resultsContainer" class="space-y-6 hidden">
+        <!-- Whole-Farm Executive Summary Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div class="p-4 glass-card rounded-2xl" data-tilt>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Farm Area</p>
+                <p id="resTotalArea" class="text-2xl font-black text-slate-800 dark:text-white mt-1">-- ha</p>
+            </div>
+            <div class="p-4 glass-card rounded-2xl" data-tilt>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Whole Farm Cost</p>
+                <p id="resTotalCost" class="text-2xl font-black text-emerald-600 mt-1">$--</p>
+            </div>
+            <div class="p-4 glass-card rounded-2xl" data-tilt>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-600">Net Farm Savings</p>
+                <p id="resTotalSavings" class="text-2xl font-black text-emerald-600 mt-1">$--</p>
+            </div>
+            <div class="p-4 glass-card rounded-2xl" data-tilt>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Fertilizer Input</p>
+                <p id="resTotalBags" class="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">-- bags</p>
+            </div>
+        </div>
+
+        <!-- Download VRA Prescription Action Banner -->
+        <div class="p-5 glass-card rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4" data-tilt>
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-md shadow-emerald-600/30">
+                    🚜
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white">Precision Tractor Guidance VRA Prescription</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Export standardized GeoJSON prescription map compatible with Trimble, John Deere, and Topcon displays.</p>
+                </div>
+            </div>
+            <button type="button" onclick="downloadVraGeoJson()" class="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center space-x-2 whitespace-nowrap">
+                <span>Download Tractor VRA (GeoJSON)</span>
+                <span>↓</span>
+            </button>
+        </div>
+
+        <!-- Per-Zone VRA Prescription Breakdown Table -->
+        <div class="glass-card rounded-3xl overflow-hidden border border-slate-200/80 dark:border-slate-800/80" data-tilt>
+            <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Variable Rate Application (VRA) Zone Breakdown</h3>
+                <span class="text-xs text-slate-400">SciPy SLSQP Individual Solutions</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-50/80 dark:bg-slate-800/60 uppercase font-bold text-slate-500 border-b border-slate-200/80 dark:border-slate-800 tracking-wider">
+                        <tr>
+                            <th class="px-5 py-3.5">Zone Name</th>
+                            <th class="px-5 py-3.5">Area</th>
+                            <th class="px-5 py-3.5">Target / Predicted</th>
+                            <th class="px-5 py-3.5">Nutrient Δ (kg/ha)</th>
+                            <th class="px-5 py-3.5">Urea Bags (50kg)</th>
+                            <th class="px-5 py-3.5">DAP Bags (50kg)</th>
+                            <th class="px-5 py-3.5">MOP Bags (50kg)</th>
+                            <th class="px-5 py-3.5">Zone Savings</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60" id="resZoneRows">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Leaflet JS & CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    let map = null;
+    let markers = [];
+    let latestGeoJson = null;
+
+    const baseLat = 31.1471;
+    const baseLon = 75.3412;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initFarmMap();
+    });
+
+    function initFarmMap() {
+        map = L.map('farmMap').setView([baseLat, baseLon], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        updateMapMarkers();
+
+        map.on('click', function (e) {
+            addNewZoneRowWithCoord(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    function updateMapMarkers() {
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        const rows = document.querySelectorAll('.zone-row');
+        rows.forEach((row, idx) => {
+            const name = row.querySelector('.zone-name').value;
+            const lat = baseLat + (idx * 0.004) - 0.002;
+            const lon = baseLon + (idx * 0.004) - 0.002;
+
+            const marker = L.marker([lat, lon]).addTo(map);
+            marker.bindPopup(`<b>${name}</b><br/>Sector ${idx + 1}`);
+            markers.push(marker);
+        });
+    }
+
+    function addNewZoneRow() {
+        addNewZoneRowWithCoord(baseLat, baseLon);
+    }
+
+    function addNewZoneRowWithCoord(lat, lon) {
+        const tbody = document.getElementById('zonesTableBody');
+        const count = tbody.querySelectorAll('.zone-row').length + 1;
+
+        const tr = document.createElement('tr');
+        tr.className = 'zone-row';
+        tr.dataset.zoneId = count;
+        tr.innerHTML = `
+            <td class="px-2 py-2">
+                <input type="text" value="Zone Sector ${count}" class="w-28 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold zone-name">
+            </td>
+            <td class="px-2 py-2">
+                <input type="number" value="12" step="0.5" min="0.5" class="w-16 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-area">
+            </td>
+            <td class="px-2 py-2">
+                <select class="px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-crop">
+                    <option value="Wheat" selected>Wheat</option>
+                    <option value="Rice">Rice</option>
+                    <option value="Maize">Maize</option>
+                    <option value="Cotton">Cotton</option>
+                </select>
+            </td>
+            <td class="px-2 py-2">
+                <div class="flex space-x-1">
+                    <input type="number" value="45" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-n" title="Nitrogen">
+                    <input type="number" value="20" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-p" title="Phosphorus">
+                    <input type="number" value="30" class="w-12 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-k" title="Potassium">
+                </div>
+            </td>
+            <td class="px-2 py-2">
+                <input type="number" value="6.5" step="0.1" class="w-14 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs zone-ph">
+            </td>
+            <td class="px-2 py-2">
+                <input type="number" value="6.2" step="0.1" class="w-16 px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-emerald-600 zone-target">
+            </td>
+            <td class="px-2 py-2 text-center">
+                <button type="button" onclick="removeZoneRow(this)" class="text-rose-500 hover:text-rose-700 font-bold text-xs">✕</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+        updateMapMarkers();
+    }
+
+    function removeZoneRow(btn) {
+        const row = btn.closest('.zone-row');
+        const rows = document.querySelectorAll('.zone-row');
+        if (rows.length <= 1) {
+            alert("At least one farm management zone is required.");
+            return;
+        }
+        row.remove();
+        updateMapMarkers();
+    }
+
+    function runMultiZoneOptimization() {
+        const rows = document.querySelectorAll('.zone-row');
+        const zonesPayload = [];
+
+        rows.forEach((r, idx) => {
+            zonesPayload.push({
+                name: r.querySelector('.zone-name').value,
+                area_ha: parseFloat(r.querySelector('.zone-area').value) || 10.0,
+                crop_type: r.querySelector('.zone-crop').value,
+                current_nitrogen: parseFloat(r.querySelector('.zone-n').value) || 40.0,
+                current_phosphorus: parseFloat(r.querySelector('.zone-p').value) || 20.0,
+                current_potassium: parseFloat(r.querySelector('.zone-k').value) || 30.0,
+                soil_ph: parseFloat(r.querySelector('.zone-ph').value) || 6.5,
+                rainfall: 750.0,
+                target_yield: parseFloat(r.querySelector('.zone-target').value) || 6.0,
+                lat: baseLat + (idx * 0.004),
+                lon: baseLon + (idx * 0.004)
+            });
+        });
+
+        // Get CSRF token
+        let csrfToken = '';
+        const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+        if (cookie) csrfToken = cookie.split('=')[1];
+
+        fetch('/api/optimize-zone/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ zones: zonesPayload })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Optimization Error: ${data.error}`);
+                return;
+            }
+            renderMultiZoneResults(data);
+        })
+        .catch(err => {
+            console.error("Multi-zone error", err);
+            alert("Error running multi-zone optimization.");
+        });
+    }
+
+    function renderMultiZoneResults(data) {
+        latestGeoJson = data.geojson;
+        const summary = data.summary;
+        const zones = data.zones;
+
+        document.getElementById('resTotalArea').textContent = `${summary.total_farm_area_ha} ha`;
+        document.getElementById('resTotalCost').textContent = `$${summary.total_farm_cost_usd.toLocaleString()}`;
+        document.getElementById('resTotalSavings').textContent = `$${summary.total_savings_usd.toLocaleString()} (${summary.percent_savings}%)`;
+        
+        const totalBags = summary.total_urea_bags + summary.total_dap_bags + summary.total_mop_bags;
+        document.getElementById('resTotalBags').textContent = `${totalBags} bags`;
+
+        const resTableBody = document.getElementById('resZoneRows');
+        resTableBody.innerHTML = '';
+
+        zones.forEach(z => {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors';
+            tr.innerHTML = `
+                <td class="px-5 py-3 font-bold text-slate-900 dark:text-white">${z.name}</td>
+                <td class="px-5 py-3 text-slate-500">${z.area_ha} ha</td>
+                <td class="px-5 py-3"><b>${z.target_yield}</b> / <span class="text-emerald-600 font-bold">${z.predicted_yield} t/ha</span></td>
+                <td class="px-5 py-3 font-mono text-[11px]">+${z.delta_n}N, +${z.delta_p}P, +${z.delta_k}K</td>
+                <td class="px-5 py-3 font-semibold text-indigo-600">${z.total_urea_bags} bags <span class="text-[10px] text-slate-400">(${z.urea_bags_per_ha}/ha)</span></td>
+                <td class="px-5 py-3 font-semibold text-amber-600">${z.total_dap_bags} bags <span class="text-[10px] text-slate-400">(${z.dap_bags_per_ha}/ha)</span></td>
+                <td class="px-5 py-3 font-semibold text-emerald-600">${z.total_mop_bags} bags <span class="text-[10px] text-slate-400">(${z.mop_bags_per_ha}/ha)</span></td>
+                <td class="px-5 py-3 font-bold text-emerald-600">$${z.cost_savings.toLocaleString()}</td>
+            `;
+            resTableBody.appendChild(tr);
+        });
+
+        document.getElementById('resultsContainer').classList.remove('hidden');
+        document.getElementById('resultsContainer').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function downloadVraGeoJson() {
+        if (!latestGeoJson) {
+            alert("Please run optimization first.");
+            return;
+        }
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(latestGeoJson, null, 2));
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", dataStr);
+        dlAnchor.setAttribute("download", "AgriOptima_Tractor_Prescription_VRA.geojson");
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+    }
+</script>
+{% endblock %}

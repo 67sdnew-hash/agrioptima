@@ -6,28 +6,79 @@
 {% block content %}
 <div class="space-y-8">
     <!-- Header Hero Banner with 3D Badge -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl glass-card relative overflow-hidden" data-tilt>
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 sm:p-7 rounded-3xl glass-card relative overflow-hidden" data-tilt>
         <div class="relative z-10 max-w-2xl">
             <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 mb-3">
                 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                <span>Real-Time Agronomic Optimization Engine</span>
+                <span>Hyper-Local Climate Integration • Multi-Zone Geospatial • Certified PDF Export</span>
             </div>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                 Prescriptive Fertilizer Optimizer <span class="text-emerald-600 dark:text-emerald-400">3D</span>
             </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                Experience precision agriculture through interactive 3D soil modeling. Compute mathematically minimal supplemental fertilizer ($\Delta N, \Delta P, \Delta K$) to guarantee target yield while preventing environmental run-off.
+                Input baseline soil metrics and real-time precipitation forecasts to compute the minimal supplemental nutrients ($\Delta N, \Delta P, \Delta K$) needed to guarantee target yield while preventing environmental run-off.
             </p>
         </div>
-        <div class="hidden md:flex items-center space-x-3 relative z-10">
-            <div class="text-right">
-                <span class="text-xs uppercase font-bold text-slate-400 block tracking-wider">Active Solver</span>
-                <span class="text-sm font-bold text-slate-800 dark:text-slate-200">SciPy SLSQP + SVR (RBF)</span>
+        <div class="flex items-center space-x-3 relative z-10">
+            <a href="{% url 'multi_zone' %}" class="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center space-x-2">
+                <span>Multi-Zone Field Mapper</span>
+                <span>🗺️</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Weather & Climate Risk Intelligence Widget -->
+    <div class="p-6 glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-4" data-tilt>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-base">
+                    🌦️
+                </div>
+                <div>
+                    <h2 class="text-sm font-bold text-slate-900 dark:text-white">Hyper-Local Weather & Climate Leaching Risk</h2>
+                    <p class="text-[11px] text-slate-400">Live 14-day precipitation forecast via Open-Meteo API</p>
+                </div>
             </div>
-            <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl shadow-inner border border-emerald-200/50 dark:border-emerald-800/50">
-                ⚡
+            <div class="flex flex-wrap items-center gap-2">
+                <select id="weatherPresetSelect" onchange="onWeatherPresetChange(this.value)" class="text-xs bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-3 py-1.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-1 focus:ring-emerald-500">
+                    <option value="31.1471,75.3412">Punjab, India (Grain Belt)</option>
+                    <option value="42.0308,-93.6319">Iowa (Corn Belt), USA</option>
+                    <option value="36.7783,-119.4179">Central Valley, California</option>
+                    <option value="30.8761,31.0004">Nile Delta, Egypt</option>
+                    <option value="51.4543,-0.9781">Thames Valley, UK</option>
+                    <option value="-23.5505,-46.6333">Sao Paulo, Brazil</option>
+                </select>
+                <button type="button" onclick="detectGPSLocation()" class="px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-300 dark:hover:bg-slate-700 transition flex items-center space-x-1">
+                    <span>Detect GPS</span>
+                    <span>📍</span>
+                </button>
             </div>
         </div>
+
+        <div id="weatherContent" class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div class="p-3 rounded-2xl bg-slate-50/60 dark:bg-slate-800/40">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Temp</span>
+                <p id="wTemp" class="text-lg font-black text-slate-800 dark:text-white mt-0.5">-- °C</p>
+            </div>
+            <div class="p-3 rounded-2xl bg-slate-50/60 dark:bg-slate-800/40">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">14-Day Precipitation</span>
+                <p id="w14dRain" class="text-lg font-black text-sky-600 dark:text-sky-400 mt-0.5">-- mm</p>
+            </div>
+            <div class="p-3 rounded-2xl bg-slate-50/60 dark:bg-slate-800/40">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Est. Season Total</span>
+                <p id="wSeasonRain" class="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">-- mm</p>
+            </div>
+            <div class="p-3 rounded-2xl bg-slate-50/60 dark:bg-slate-800/40 flex flex-col justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Leaching Risk</span>
+                    <p id="wRisk" class="text-xs font-black text-emerald-600 uppercase mt-0.5">ANALYZING...</p>
+                </div>
+                <button type="button" onclick="applyWeatherRainfall()" class="mt-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline text-left">
+                    Sync to Rainfall Input ↓
+                </button>
+            </div>
+        </div>
+        <p id="wRiskMsg" class="text-[11px] text-slate-500 italic"></p>
     </div>
 
     <!-- Infeasibility Banner -->
@@ -130,7 +181,24 @@
                 </div>
             </div>
 
-            <!-- Prescribed Recipe Breakdown with 3D Nutrient Orbs -->
+            <!-- Certified Agronomist PDF Exporter Callout -->
+            <div class="p-5 glass-card rounded-3xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4" data-tilt>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl shadow-md shadow-emerald-600/30">
+                        📄
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-900 dark:text-white">Certified Agronomist Field Report</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Download printable official prescription PDF with commercial bag shopping list.</p>
+                    </div>
+                </div>
+                <a href="{% url 'export_pdf_report' latest_result.id %}" target="_blank" class="px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition-all flex items-center space-x-2 whitespace-nowrap">
+                    <span>Download PDF Report</span>
+                    <span>↓</span>
+                </a>
+            </div>
+
+            <!-- Prescribed Recipe Breakdown with 3D Depth -->
             <div class="p-6 glass-card rounded-3xl" data-tilt>
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-base font-bold text-slate-900 dark:text-white">Prescribed Fertilizer Application ($\Delta N, \Delta P, \Delta K$)</h3>
@@ -153,6 +221,33 @@
                         <span class="text-xs text-emerald-500/80 font-semibold">kg / ha</span>
                     </div>
                 </div>
+
+                <!-- Commercial Fertilizer Bag Translation Shopping List -->
+                {% if commercial_bags %}
+                <div class="mt-5 p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/60">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                        <span>Commercial 50kg Fertilizer Bag Equivalents (Per Hectare)</span>
+                        <span class="text-[10px] text-emerald-600 font-semibold">Ready for Purchase</span>
+                    </h4>
+                    <div class="grid grid-cols-3 gap-3 text-center text-xs">
+                        <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-400 block text-[10px] font-bold uppercase">Urea (46-0-0)</span>
+                            <span class="text-base font-extrabold text-indigo-600 dark:text-indigo-400">{{ commercial_bags.urea_bags }} bags</span>
+                            <span class="text-[10px] text-slate-400 block">({{ commercial_bags.urea_kg }} kg)</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-400 block text-[10px] font-bold uppercase">DAP (18-46-0)</span>
+                            <span class="text-base font-extrabold text-amber-600 dark:text-amber-400">{{ commercial_bags.dap_bags }} bags</span>
+                            <span class="text-[10px] text-slate-400 block">({{ commercial_bags.dap_kg }} kg)</span>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <span class="text-slate-400 block text-[10px] font-bold uppercase">MOP (0-0-60)</span>
+                            <span class="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{{ commercial_bags.mop_bags }} bags</span>
+                            <span class="text-[10px] text-slate-400 block">({{ commercial_bags.mop_kg }} kg)</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row justify-between text-xs text-slate-500 gap-2">
                     <span>Prescription Cost: <strong class="text-slate-900 dark:text-white">${{ latest_result.optimized_cost }}/ha</strong></span>
@@ -215,7 +310,66 @@
     // Initialize 3D Soil Digital Twin Scene
     document.addEventListener('DOMContentLoaded', function () {
         initSoil3DField('soil3DCanvasContainer');
+        // Fetch initial weather for default preset
+        loadWeatherData(31.1471, 75.3412);
     });
+
+    let currentRecommendedRainfall = 750.0;
+
+    function loadWeatherData(lat, lon) {
+        fetch(`/api/weather/?lat=${lat}&lon=${lon}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('wTemp').textContent = `${data.current_temp} °C`;
+                document.getElementById('w14dRain').textContent = `${data.total_14d_precip_mm} mm`;
+                document.getElementById('wSeasonRain').textContent = `${data.recommended_rainfall_mm} mm`;
+                
+                const riskElem = document.getElementById('wRisk');
+                riskElem.textContent = data.leaching_risk;
+                if (data.risk_color === 'red') {
+                    riskElem.className = 'text-xs font-black text-rose-600 uppercase mt-0.5';
+                } else if (data.risk_color === 'amber') {
+                    riskElem.className = 'text-xs font-black text-amber-600 uppercase mt-0.5';
+                } else {
+                    riskElem.className = 'text-xs font-black text-emerald-600 uppercase mt-0.5';
+                }
+
+                document.getElementById('wRiskMsg').textContent = `AgriOptima Advisory: ${data.risk_message}`;
+                currentRecommendedRainfall = data.recommended_rainfall_mm;
+            })
+            .catch(err => {
+                console.error("Weather load error", err);
+            });
+    }
+
+    function onWeatherPresetChange(val) {
+        const parts = val.split(',');
+        loadWeatherData(parseFloat(parts[0]), parseFloat(parts[1]));
+    }
+
+    function detectGPSLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    loadWeatherData(pos.coords.latitude, pos.coords.longitude);
+                },
+                (err) => {
+                    alert("Location access denied or unavailable. Using agricultural preset.");
+                }
+            );
+        } else {
+            alert("Geolocation is not supported by your browser.");
+        }
+    }
+
+    function applyWeatherRainfall() {
+        const rainInput = document.getElementById('id_rainfall');
+        if (rainInput) {
+            rainInput.value = currentRecommendedRainfall;
+            rainInput.classList.add('ring-2', 'ring-emerald-500');
+            setTimeout(() => rainInput.classList.remove('ring-2', 'ring-emerald-500'), 1200);
+        }
+    }
 
     {% if response_curves_json %}
     const curveData = JSON.parse('{{ response_curves_json|escapejs }}');
