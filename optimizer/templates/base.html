@@ -53,6 +53,27 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom 3D & Cursor Styles -->
     <link rel="stylesheet" href="{% static 'css/custom_3d.css' %}">
+    <!-- Immediate Theme Initialization (Zero Flash) -->
+    <script>
+        (function() {
+            try {
+                const saved = localStorage.getItem('agrioptima_theme') || 'light';
+                const html = document.documentElement;
+                html.classList.remove('dark', 'theme-forest', 'theme-solar', 'theme-contrast', 'theme-cyber');
+                if (saved === 'dark') {
+                    html.classList.add('dark');
+                } else if (saved === 'forest') {
+                    html.classList.add('dark', 'theme-forest');
+                } else if (saved === 'solar') {
+                    html.classList.add('dark', 'theme-solar');
+                } else if (saved === 'contrast') {
+                    html.classList.add('dark', 'theme-contrast');
+                } else if (saved === 'cyber') {
+                    html.classList.add('dark', 'theme-cyber');
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body class="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-white">
     <!-- Navbar with Soft Glassmorphic Blur -->
@@ -87,15 +108,142 @@
                 </div>
             </a>
 
-            <nav class="flex items-center space-x-1 sm:space-x-2">
-                <a href="{% url 'dashboard' %}" class="px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">Optimizer 3D</a>
-                <a href="{% url 'multi_zone' %}" class="px-3 py-1.5 text-xs font-bold rounded-xl text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all border border-emerald-200/60 dark:border-emerald-800/60 flex items-center space-x-1">
-                    <span>Farm Zones</span>
-                    <span>🗺️</span>
-                </a>
-                <a href="{% url 'history' %}" class="px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">History Log</a>
-                <a href="{% url 'research' %}" class="px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">Methodology</a>
-            </nav>
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <nav class="hidden md:flex items-center space-x-1 sm:space-x-1.5">
+                    <a href="{% url 'dashboard' %}" class="px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">Optimizer 3D</a>
+                    <a href="{% url 'multi_zone' %}" class="px-3 py-1.5 text-xs font-bold rounded-xl text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-all border border-emerald-200/60 dark:border-emerald-800/60 flex items-center space-x-1">
+                        <span>Farm Zones</span>
+                        <span>🗺️</span>
+                    </a>
+                    <a href="{% url 'history' %}" class="px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">History Log</a>
+                    <a href="{% url 'research' %}" class="px-3 py-1.5 text-xs font-bold rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">Methodology</a>
+                </nav>
+
+                <!-- Theme & Language Utility Controls -->
+                <div class="flex items-center space-x-1.5 sm:space-x-2 pl-2 sm:pl-3 border-l border-slate-200 dark:border-slate-800">
+                    <!-- Language Selector Dropdown -->
+                    <div class="relative" id="langDropdownContainer">
+                        <button type="button" id="langMenuBtn" onclick="toggleLangDropdown()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 flex items-center space-x-1.5 transition-all shadow-xs" title="Select Global Language">
+                            <span id="activeLangFlag" class="text-sm">🌐</span>
+                            <span id="activeLangCode" class="uppercase text-[11px] font-extrabold tracking-wide">EN</span>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="langDropdownMenu" class="hidden absolute right-0 mt-2 w-52 py-2 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-2xl z-50 text-xs space-y-0.5 max-h-80 overflow-y-auto">
+                            <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                                <span>Global Languages</span>
+                                <span>🌐</span>
+                            </div>
+                            <button type="button" onclick="changeAppLanguage('en', '🇬🇧', 'English')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇬🇧</span> <span class="font-medium">English</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('es', '🇪🇸', 'Español')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇪🇸</span> <span class="font-medium">Español (Spanish)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('hi', '🇮🇳', 'हिन्दी')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇮🇳</span> <span class="font-medium">हिन्दी (Hindi)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('fr', '🇫🇷', 'Français')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇫🇷</span> <span class="font-medium">Français (French)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('pt', '🇧🇷', 'Português')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇧🇷</span> <span class="font-medium">Português (Portuguese)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('zh-CN', '🇨🇳', '中文')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇨🇳</span> <span class="font-medium">简体中文 (Chinese)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('de', '🇩🇪', 'Deutsch')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇩🇪</span> <span class="font-medium">Deutsch (German)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('ar', '🇦🇪', 'العربية')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇦🇪</span> <span class="font-medium">العربية (Arabic)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('ru', '🇷🇺', 'Русский')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇷🇺</span> <span class="font-medium">Русский (Russian)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('bn', '🇧🇩', 'বাংলা')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇧🇩</span> <span class="font-medium">বাংলা (Bengali)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('id', '🇮🇩', 'Indonesia')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇮🇩</span> <span class="font-medium">Bahasa Indonesia</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('sw', '🇰🇪', 'Kiswahili')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇰🇪</span> <span class="font-medium">Kiswahili</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('tr', '🇹🇷', 'Türkçe')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇹🇷</span> <span class="font-medium">Türkçe (Turkish)</span>
+                            </button>
+                            <button type="button" onclick="changeAppLanguage('ja', '🇯🇵', '日本語')" class="w-full text-left px-3 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition">
+                                <span class="text-sm">🇯🇵</span> <span class="font-medium">日本語 (Japanese)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Theme Mode Selector Dropdown -->
+                    <div class="relative" id="themeDropdownContainer">
+                        <button type="button" id="themeMenuBtn" onclick="toggleThemeDropdown()" class="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 flex items-center space-x-1.5 transition-all shadow-xs" title="Switch Display Theme">
+                            <span id="activeThemeIcon" class="text-sm">☀️</span>
+                            <span id="activeThemeLabel" class="hidden sm:inline text-[11px] font-extrabold tracking-wide">Light</span>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="themeDropdownMenu" class="hidden absolute right-0 mt-2 w-56 p-2 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-2xl z-50 text-xs space-y-1">
+                            <div class="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Display Theme</div>
+                            <!-- Standard Core Modes -->
+                            <button type="button" onclick="setAppTheme('light')" class="w-full text-left px-2.5 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl transition">
+                                <span class="text-amber-500 text-base">☀️</span>
+                                <div>
+                                    <div class="font-bold">Light Mode</div>
+                                    <div class="text-[10px] text-slate-400">Daytime soft agronomic sage</div>
+                                </div>
+                            </button>
+                            <button type="button" onclick="setAppTheme('dark')" class="w-full text-left px-2.5 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl transition">
+                                <span class="text-indigo-400 text-base">🌙</span>
+                                <div>
+                                    <div class="font-bold">Dark Mode</div>
+                                    <div class="text-[10px] text-slate-400">Deep slate with emerald glow</div>
+                                </div>
+                            </button>
+
+                            <div class="my-1 border-t border-slate-100 dark:border-slate-800"></div>
+                            <div class="px-2 py-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center justify-between">
+                                <span>Custom Modes</span>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-500/20">Special</span>
+                            </div>
+
+                            <!-- Custom Agronomic Modes -->
+                            <button type="button" onclick="setAppTheme('forest')" class="w-full text-left px-2.5 py-1.5 flex items-center space-x-2.5 hover:bg-emerald-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl transition">
+                                <span class="text-emerald-500 text-base">🌲</span>
+                                <div>
+                                    <div class="font-bold text-emerald-700 dark:text-emerald-300">Forest Canopy</div>
+                                    <div class="text-[10px] text-slate-400">Chlorophyll lush evergreen</div>
+                                </div>
+                            </button>
+                            <button type="button" onclick="setAppTheme('solar')" class="w-full text-left px-2.5 py-1.5 flex items-center space-x-2.5 hover:bg-amber-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl transition">
+                                <span class="text-amber-500 text-base">🌾</span>
+                                <div>
+                                    <div class="font-bold text-amber-700 dark:text-amber-300">Golden Harvest</div>
+                                    <div class="text-[10px] text-slate-400">Warm solar amber & wheat</div>
+                                </div>
+                            </button>
+                            <button type="button" onclick="setAppTheme('contrast')" class="w-full text-left px-2.5 py-1.5 flex items-center space-x-2.5 hover:bg-yellow-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl transition">
+                                <span class="text-yellow-400 text-base">🚜</span>
+                                <div>
+                                    <div class="font-bold text-yellow-600 dark:text-yellow-400">Field Sunlight</div>
+                                    <div class="text-[10px] text-slate-400">High-contrast outdoor tractor mode</div>
+                                </div>
+                            </button>
+                            <button type="button" onclick="setAppTheme('cyber')" class="w-full text-left px-2.5 py-1.5 flex items-center space-x-2.5 hover:bg-cyan-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl transition">
+                                <span class="text-cyan-400 text-base">🌌</span>
+                                <div>
+                                    <div class="font-bold text-cyan-600 dark:text-cyan-300">Cyber Agronomy</div>
+                                    <div class="text-[10px] text-slate-400">OLED black & cyan telemetry</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -132,6 +280,142 @@
 
     <!-- Interactive Touch/Cursor Engine -->
     <script src="{% static 'js/cursor_and_tilt.js' %}"></script>
+
+    <!-- Hidden Google Translate Element Container -->
+    <div id="google_translate_element" style="display: none;"></div>
+
+    <!-- Theme & Internationalization (i18n) Engine -->
+    <script type="text/javascript">
+        // Google Translate Element Init
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'en,es,hi,fr,pt,zh-CN,de,ar,ru,bn,id,sw,tr,ja',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+
+        // Language Switching Engine
+        function changeAppLanguage(langCode, flag, name) {
+            try {
+                localStorage.setItem('agrioptima_lang_code', langCode);
+                localStorage.setItem('agrioptima_lang_flag', flag);
+                localStorage.setItem('agrioptima_lang_name', name);
+
+                const flagElem = document.getElementById('activeLangFlag');
+                const codeElem = document.getElementById('activeLangCode');
+                if (flagElem) flagElem.textContent = flag;
+                if (codeElem) codeElem.textContent = langCode.toUpperCase().split('-')[0];
+
+                const langMenu = document.getElementById('langDropdownMenu');
+                if (langMenu) langMenu.classList.add('hidden');
+
+                if (langCode === 'en') {
+                    // Reset to English
+                    document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                    document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname + ";";
+                    window.location.reload();
+                    return;
+                }
+
+                document.cookie = "googtrans=/en/" + langCode + "; path=/;";
+                document.cookie = "googtrans=/en/" + langCode + "; path=/; domain=" + window.location.hostname + ";";
+
+                // Trigger combo box if ready
+                const select = document.querySelector('.goog-te-combo');
+                if (select) {
+                    select.value = langCode;
+                    select.dispatchEvent(new Event('change'));
+                } else {
+                    window.location.reload();
+                }
+            } catch(e) {
+                console.error("Language change error:", e);
+            }
+        }
+
+        function toggleLangDropdown() {
+            const langMenu = document.getElementById('langDropdownMenu');
+            const themeMenu = document.getElementById('themeDropdownMenu');
+            if (themeMenu) themeMenu.classList.add('hidden');
+            if (langMenu) langMenu.classList.toggle('hidden');
+        }
+
+        // Theme Engine
+        function setAppTheme(themeName) {
+            const html = document.documentElement;
+            html.classList.remove('dark', 'theme-forest', 'theme-solar', 'theme-contrast', 'theme-cyber');
+
+            let icon = '☀️';
+            let label = 'Light';
+
+            if (themeName === 'dark') {
+                html.classList.add('dark');
+                icon = '🌙';
+                label = 'Dark';
+            } else if (themeName === 'forest') {
+                html.classList.add('dark', 'theme-forest');
+                icon = '🌲';
+                label = 'Forest';
+            } else if (themeName === 'solar') {
+                html.classList.add('dark', 'theme-solar');
+                icon = '🌾';
+                label = 'Solar';
+            } else if (themeName === 'contrast') {
+                html.classList.add('dark', 'theme-contrast');
+                icon = '🚜';
+                label = 'Sunlight';
+            } else if (themeName === 'cyber') {
+                html.classList.add('dark', 'theme-cyber');
+                icon = '🌌';
+                label = 'Cyber';
+            } else {
+                themeName = 'light';
+            }
+
+            localStorage.setItem('agrioptima_theme', themeName);
+            const iconElem = document.getElementById('activeThemeIcon');
+            const labelElem = document.getElementById('activeThemeLabel');
+            if (iconElem) iconElem.textContent = icon;
+            if (labelElem) labelElem.textContent = label;
+
+            const menu = document.getElementById('themeDropdownMenu');
+            if (menu) menu.classList.add('hidden');
+        }
+
+        function toggleThemeDropdown() {
+            const menu = document.getElementById('themeDropdownMenu');
+            const langMenu = document.getElementById('langDropdownMenu');
+            if (langMenu) langMenu.classList.add('hidden');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        // Close dropdowns on click outside
+        document.addEventListener('click', function(e) {
+            const langContainer = document.getElementById('langDropdownContainer');
+            const themeContainer = document.getElementById('themeDropdownContainer');
+            if (langContainer && !langContainer.contains(e.target)) {
+                document.getElementById('langDropdownMenu')?.classList.add('hidden');
+            }
+            if (themeContainer && !themeContainer.contains(e.target)) {
+                document.getElementById('themeDropdownMenu')?.classList.add('hidden');
+            }
+        });
+
+        // Initialize state on DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('agrioptima_theme') || 'light';
+            setAppTheme(savedTheme);
+
+            const savedLangCode = localStorage.getItem('agrioptima_lang_code') || 'en';
+            const savedLangFlag = localStorage.getItem('agrioptima_lang_flag') || '🌐';
+            const flagElem = document.getElementById('activeLangFlag');
+            const codeElem = document.getElementById('activeLangCode');
+            if (flagElem) flagElem.textContent = savedLangFlag;
+            if (codeElem) codeElem.textContent = savedLangCode.toUpperCase().split('-')[0];
+        });
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -134,3 +134,108 @@
   border-radius: 1.25rem;
   background: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
 }
+
+/* ========================================================
+   Custom Agronomic Theme Modes (Light, Dark & Custom Modes)
+   ======================================================== */
+
+/* 1. Theme Forest Canopy (Deep Lush Evergreen & Emerald) */
+html.theme-forest body {
+  background-color: #06170e !important;
+  color: #ecfdf5 !important;
+}
+html.theme-forest .glass-card {
+  background: rgba(10, 31, 20, 0.9) !important;
+  border-color: rgba(52, 211, 153, 0.3) !important;
+  box-shadow: 0 10px 30px -5px rgba(4, 44, 25, 0.5) !important;
+}
+html.theme-forest header {
+  background: rgba(6, 23, 14, 0.92) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+html.theme-forest footer {
+  background: rgba(6, 23, 14, 0.92) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+/* 2. Theme Golden Solar Harvest (Warm Amber & Wheat) */
+html.theme-solar body {
+  background-color: #140d04 !important;
+  color: #fefce8 !important;
+}
+html.theme-solar .glass-card {
+  background: rgba(36, 24, 9, 0.92) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 10px 30px -5px rgba(245, 158, 11, 0.2) !important;
+}
+html.theme-solar header {
+  background: rgba(20, 13, 4, 0.92) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+html.theme-solar footer {
+  background: rgba(20, 13, 4, 0.92) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+
+/* 3. Theme High-Contrast Field Tablet (Direct Outdoor Sunlight) */
+html.theme-contrast body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+html.theme-contrast .glass-card {
+  background: #0a0a0a !important;
+  border: 2px solid #eab308 !important;
+  box-shadow: none !important;
+}
+html.theme-contrast header {
+  background: #000000 !important;
+  border-bottom: 2px solid #eab308 !important;
+}
+html.theme-contrast footer {
+  background: #000000 !important;
+  border-top: 2px solid #eab308 !important;
+}
+
+/* 4. Theme Cyber Agronomy (OLED Deep Slate & Cyan Telemetry) */
+html.theme-cyber body {
+  background-color: #020617 !important;
+  color: #f8fafc !important;
+}
+html.theme-cyber .glass-card {
+  background: rgba(15, 23, 42, 0.94) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 10px 30px -5px rgba(2, 132, 199, 0.25) !important;
+}
+html.theme-cyber header {
+  background: rgba(2, 6, 23, 0.94) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+html.theme-cyber footer {
+  background: rgba(2, 6, 23, 0.94) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+/* ========================================================
+   Clean Native Look for Google Translate Engine
+   ======================================================== */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame {
+  display: none !important;
+}
+body {
+  top: 0px !important;
+}
+.skiptranslate > iframe {
+  display: none !important;
+}
+#goog-gt-tt, .goog-te-balloon-frame {
+  display: none !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
+font {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
