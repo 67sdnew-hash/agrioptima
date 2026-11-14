@@ -100,6 +100,43 @@ def geocode_city_name(query: str) -> Dict[str, Any]:
     }
 
 
+def search_global_locations(query: str, count: int = 6) -> list:
+    """
+    Searches worldwide locations via Open-Meteo Geocoding API.
+    Returns list of matching location dicts: [{ name, admin1, country, label, latitude, longitude }]
+    """
+    if not query or len(query.strip()) < 2:
+        return []
+
+    try:
+        encoded = urllib.parse.quote(query.strip())
+        url = f"https://geocoding-api.open-meteo.com/v1/search?name={encoded}&count={count}&language=en&format=json"
+        req = urllib.request.Request(
+            url,
+            headers={'User-Agent': 'AgriOptima-Precision-Agriculture/1.0'}
+        )
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode('utf-8'))
+
+        results = []
+        for r in data.get('results', []):
+            name = r.get('name', '')
+            admin1 = r.get('admin1', '')
+            country = r.get('country', '')
+            parts = [p for p in (name, admin1, country) if p]
+            results.append({
+                'name': name,
+                'admin1': admin1,
+                'country': country,
+                'label': ', '.join(parts),
+                'latitude': round(float(r['latitude']), 4),
+                'longitude': round(float(r['longitude']), 4),
+            })
+        return results
+    except Exception:
+        return []
+
+
 def fetch_weather_forecast(lat: float, lon: float, location_name: str = None) -> Dict[str, Any]:
     """
     Fetches real-time weather & 14-day precipitation projections from Open-Meteo.

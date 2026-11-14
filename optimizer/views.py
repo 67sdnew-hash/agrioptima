@@ -165,6 +165,15 @@ def weather_proxy_view(request):
     return JsonResponse(weather_data)
 
 
+@require_GET
+def search_locations_api_view(request):
+    """API endpoint providing real-time worldwide location search autocomplete."""
+    from .services.weather import search_global_locations
+    query = request.GET.get('q', '').strip()
+    results = search_global_locations(query, count=8)
+    return JsonResponse({'results': results})
+
+
 def multi_zone_view(request):
     """Interactive multi-zone farm mapper for precision variable-rate application."""
     context = {

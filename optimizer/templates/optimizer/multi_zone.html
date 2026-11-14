@@ -40,6 +40,19 @@
                     <span>📍</span>
                 </button>
             </div>
+            <!-- Global Map Location Search Bar -->
+            <div class="relative">
+                <input 
+                    type="text" 
+                    id="mapSearchInput" 
+                    placeholder="Search ANY farm, city, or lat, lon coordinates..." 
+                    onkeydown="if(event.key==='Enter'){searchMapLocation(); event.preventDefault();}" 
+                    class="w-full text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-2 text-slate-800 dark:text-slate-200 font-medium focus:ring-1 focus:ring-emerald-500 shadow-inner"
+                >
+                <button type="button" onclick="searchMapLocation()" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-bold">
+                    🔍
+                </button>
+            </div>
             <div id="farmMap" class="w-full h-80 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-inner z-10"></div>
             <p class="text-[11px] text-slate-400 italic">
                 *Pins show GPS coordinates of each management zone. Coordinates are embedded directly into the exported tractor VRA GeoJSON.
@@ -311,6 +324,45 @@
                     if (btn) btn.innerHTML = `<span>Center on My Location</span> <span>📍</span>`;
                 });
         }
+    }
+
+    function searchMapLocation() {
+        const input = document.getElementById('mapSearchInput');
+        const query = input.value.trim();
+        if (!query) return;
+
+        // Check if coordinates (lat, lon)
+        const coordMatch = query.match(/^([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)$/);
+        if (coordMatch) {
+            const lat = parseFloat(coordMatch[1]);
+            const lon = parseFloat(coordMatch[2]);
+            baseLat = lat;
+            baseLon = lon;
+            if (map) {
+                map.setView([lat, lon], 14);
+                updateMapMarkers();
+            }
+            return;
+        }
+
+        // Otherwise geocode via API
+        fetch(`/api/weather/?city=${encodeURIComponent(query)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.latitude && data.longitude) {
+                    baseLat = data.latitude;
+                    baseLon = data.longitude;
+                    if (map) {
+                        map.setView([baseLat, baseLon], 14);
+                        updateMapMarkers();
+                    }
+                } else {
+                    alert(`Location '${query}' not found.`);
+                }
+            })
+            .catch(err => {
+                console.error("Map search error", err);
+            });
     }
 
     function initFarmMap() {

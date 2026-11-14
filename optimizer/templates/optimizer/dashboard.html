@@ -27,49 +27,82 @@
         </div>
     </div>
 
-    <!-- Weather & Climate Risk Intelligence Widget -->
+    <!-- Universal Global Weather & Climate Risk Intelligence Widget -->
     <div class="p-6 glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-4" data-tilt>
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
             <div class="flex items-center space-x-2.5">
                 <div class="w-9 h-9 rounded-2xl bg-sky-100 dark:bg-sky-950 text-sky-600 dark:text-sky-400 flex items-center justify-center font-bold text-lg">
                     🌦️
                 </div>
                 <div>
-                    <div class="flex items-center space-x-2">
-                        <h2 class="text-sm font-bold text-slate-900 dark:text-white">Hyper-Local Weather & Climate Leaching Risk</h2>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-sm font-bold text-slate-900 dark:text-white">Global Weather & Climate Risk Intelligence</h2>
                         <span id="locBadge" class="inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200/60 dark:border-emerald-800/60 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
                             <span>📍</span>
                             <span id="locLabel">Locating Farm...</span>
                         </span>
                     </div>
-                    <p class="text-[11px] text-slate-400">Live 14-day precipitation forecast & nitrate run-off risk</p>
+                    <p class="text-[11px] text-slate-400">Live 14-day precipitation forecast & nitrate run-off risk for ANY location on Earth</p>
                 </div>
             </div>
 
-            <!-- Location Search & Auto-Detect Controls -->
-            <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-                <div class="relative flex-1 sm:w-56">
-                    <input type="text" id="citySearchInput" placeholder="Search city or district..." onkeydown="if(event.key==='Enter'){searchCityLocation(); event.preventDefault();}" class="w-full text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-3 pr-8 py-1.5 text-slate-800 dark:text-slate-200 font-medium focus:ring-1 focus:ring-emerald-500">
-                    <button type="button" onclick="searchCityLocation()" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs font-bold">
-                        🔍
+            <button type="button" id="btnDetectGPS" onclick="detectUserLocation()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition flex items-center space-x-1.5 whitespace-nowrap">
+                <span>Detect My Location</span>
+                <span>📍</span>
+            </button>
+        </div>
+
+        <!-- Universal Global Location Search Field with Live Autocomplete -->
+        <div class="relative w-full">
+            <div class="relative flex items-center">
+                <span class="absolute left-3.5 text-slate-400 text-sm">🌍</span>
+                <input 
+                    type="text" 
+                    id="globalLocationInput" 
+                    placeholder="Search ANY farm location worldwide (e.g. Des Moines, Punjab, Cairo, Paris, Sydney, or Lat, Lon)..." 
+                    autocomplete="off"
+                    oninput="onGlobalLocationInput(this.value)"
+                    onkeydown="onGlobalLocationKeyDown(event)"
+                    class="w-full text-xs bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl pl-10 pr-20 py-2.5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-slate-900 transition-all shadow-inner"
+                >
+                <div class="absolute right-2 flex items-center space-x-1">
+                    <button type="button" onclick="submitCustomLocation()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-xl transition">
+                        Find
                     </button>
                 </div>
-
-                <select id="weatherPresetSelect" onchange="onWeatherPresetChange(this.value)" class="text-xs bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5 text-slate-800 dark:text-slate-200 font-semibold focus:ring-1 focus:ring-emerald-500">
-                    <option value="" disabled selected>Or Pick Preset Region...</option>
-                    <option value="31.1471,75.3412,Punjab, India">Punjab, India (Grain Belt)</option>
-                    <option value="42.0308,-93.6319,Iowa, USA">Iowa (Corn Belt), USA</option>
-                    <option value="36.7783,-119.4179,Central Valley, CA">Central Valley, California</option>
-                    <option value="30.8761,31.0004,Nile Delta, Egypt">Nile Delta, Egypt</option>
-                    <option value="51.4543,-0.9781,Thames Valley, UK">Thames Valley, UK</option>
-                    <option value="-23.5505,-46.6333,Sao Paulo, Brazil">Sao Paulo, Brazil</option>
-                </select>
-
-                <button type="button" id="btnDetectGPS" onclick="detectUserLocation()" class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition flex items-center space-x-1.5">
-                    <span>Detect My Location</span>
-                    <span>📍</span>
-                </button>
             </div>
+
+            <!-- Floating Suggestions Dropdown -->
+            <div id="locationSuggestionsContainer" class="absolute left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 overflow-hidden hidden max-h-64 overflow-y-auto">
+                <div id="locationSuggestionsList" class="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Agricultural Region Chips (Global Presets) -->
+        <div class="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+            <span class="text-slate-400 font-semibold mr-1">Global Belts:</span>
+            <button type="button" onclick="selectGlobalLocation(31.1471, 75.3412, 'Punjab (Grain Belt), India')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 text-slate-600 dark:text-slate-300 font-medium transition border border-transparent hover:border-emerald-300">
+                🌾 Punjab, IN
+            </button>
+            <button type="button" onclick="selectGlobalLocation(42.0308, -93.6319, 'Iowa (Corn Belt), USA')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 text-slate-600 dark:text-slate-300 font-medium transition border border-transparent hover:border-emerald-300">
+                🌽 Iowa, US
+            </button>
+            <button type="button" onclick="selectGlobalLocation(36.7783, -119.4179, 'Central Valley, California')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 text-slate-600 dark:text-slate-300 font-medium transition border border-transparent hover:border-emerald-300">
+                🍇 California, US
+            </button>
+            <button type="button" onclick="selectGlobalLocation(30.8761, 31.0004, 'Nile Delta, Egypt')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 text-slate-600 dark:text-slate-300 font-medium transition border border-transparent hover:border-emerald-300">
+                🌿 Nile Delta, EG
+            </button>
+            <button type="button" onclick="selectGlobalLocation(51.4543, -0.9781, 'Thames Valley, UK')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 text-slate-600 dark:text-slate-300 font-medium transition border border-transparent hover:border-emerald-300">
+                🌱 Thames Valley, UK
+            </button>
+            <button type="button" onclick="selectGlobalLocation(-23.5505, -46.6333, 'Sao Paulo, Brazil')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 text-slate-600 dark:text-slate-300 font-medium transition border border-transparent hover:border-emerald-300">
+                ☕ Sao Paulo, BR
+            </button>
+            <button type="button" onclick="selectGlobalLocation(49.4875, 8.4660, 'Rhine Valley, Germany')" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 hover:text-emerald-600 text-slate-600 dark:text-slate-300 font-medium transition border border-transparent hover:border-emerald-300">
+                🍇 Rhine Valley, DE
+            </button>
         </div>
 
         <div id="weatherContent" class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -327,11 +360,23 @@
     // Initialize 3D Soil Digital Twin Scene & Location Weather
     document.addEventListener('DOMContentLoaded', function () {
         initSoil3DField('soil3DCanvasContainer');
-        // Initial auto-detection
-        detectUserLocation();
+        
+        // Restore last chosen location from storage or auto-detect
+        const savedLoc = localStorage.getItem('agrioptima_saved_location');
+        if (savedLoc) {
+            try {
+                const parsed = JSON.parse(savedLoc);
+                selectGlobalLocation(parsed.lat, parsed.lon, parsed.label, false);
+            } catch(e) {
+                detectUserLocation();
+            }
+        } else {
+            detectUserLocation();
+        }
     });
 
     let currentRecommendedRainfall = 750.0;
+    let searchDebounceTimer = null;
 
     function applyWeatherData(data) {
         if (!data || !data.success) {
@@ -339,7 +384,7 @@
             return;
         }
 
-        document.getElementById('locLabel').textContent = data.location_name || 'Detected Farm';
+        document.getElementById('locLabel').textContent = data.location_name || 'Active Farm';
         document.getElementById('wTemp').textContent = `${data.current_temp} °C`;
         document.getElementById('w14dRain').textContent = `${data.total_14d_precip_mm} mm`;
         document.getElementById('wSeasonRain').textContent = `${data.recommended_rainfall_mm} mm`;
@@ -358,30 +403,74 @@
         currentRecommendedRainfall = data.recommended_rainfall_mm;
     }
 
-    function loadWeatherByUrl(url) {
-        fetch(url)
+    function selectGlobalLocation(lat, lon, label, save = true) {
+        hideSuggestions();
+        const input = document.getElementById('globalLocationInput');
+        if (input) input.value = label;
+
+        document.getElementById('locLabel').textContent = label;
+        
+        if (save) {
+            localStorage.setItem('agrioptima_saved_location', JSON.stringify({ lat, lon, label }));
+        }
+
+        fetch(`/api/weather/?lat=${lat}&lon=${lon}&name=${encodeURIComponent(label)}`)
             .then(res => res.json())
             .then(data => applyWeatherData(data))
-            .catch(err => {
-                console.error("Weather load error", err);
-            });
+            .catch(err => console.error("Weather error", err));
     }
 
-    function onWeatherPresetChange(val) {
-        if (!val) return;
-        const parts = val.split(',');
-        const lat = parseFloat(parts[0]);
-        const lon = parseFloat(parts[1]);
-        const name = parts[2] || '';
-        loadWeatherByUrl(`/api/weather/?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name)}`);
+    function onGlobalLocationInput(val) {
+        clearTimeout(searchDebounceTimer);
+        const query = val.trim();
+
+        // Check if query is coordinate pair (e.g., "22.56, 88.36")
+        const coordMatch = query.match(/^([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)$/);
+        if (coordMatch) {
+            hideSuggestions();
+            return;
+        }
+
+        if (query.length < 2) {
+            hideSuggestions();
+            return;
+        }
+
+        searchDebounceTimer = setTimeout(() => {
+            fetch(`/api/locations/?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    renderLocationSuggestions(data.results || []);
+                })
+                .catch(err => console.error("Location search error", err));
+        }, 220);
     }
 
-    function searchCityLocation() {
-        const input = document.getElementById('citySearchInput');
+    function onGlobalLocationKeyDown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            submitCustomLocation();
+        } else if (e.key === 'Escape') {
+            hideSuggestions();
+        }
+    }
+
+    function submitCustomLocation() {
+        const input = document.getElementById('globalLocationInput');
         const query = input.value.trim();
         if (!query) return;
 
-        document.getElementById('locLabel').textContent = `Searching '${query}'...`;
+        // Check if coordinates
+        const coordMatch = query.match(/^([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)$/);
+        if (coordMatch) {
+            const lat = parseFloat(coordMatch[1]);
+            const lon = parseFloat(coordMatch[2]);
+            selectGlobalLocation(lat, lon, `Custom Coordinates (${lat.toFixed(3)}°, ${lon.toFixed(3)}°)`);
+            return;
+        }
+
+        // Otherwise geocode via API
+        document.getElementById('locLabel').textContent = `Locating '${query}'...`;
         fetch(`/api/weather/?city=${encodeURIComponent(query)}`)
             .then(res => res.json())
             .then(data => {
@@ -389,12 +478,50 @@
                     alert(data.error || "Location not found.");
                     return;
                 }
-                applyWeatherData(data);
+                selectGlobalLocation(data.latitude, data.longitude, data.location_name);
             })
-            .catch(err => {
-                console.error("City search error", err);
-            });
+            .catch(err => console.error("Location submit error", err));
     }
+
+    function renderLocationSuggestions(results) {
+        const container = document.getElementById('locationSuggestionsContainer');
+        const list = document.getElementById('locationSuggestionsList');
+
+        if (!results || results.length === 0) {
+            list.innerHTML = `<div class="px-4 py-3 text-slate-400 text-center">No locations found. Try another city, district or coordinates.</div>`;
+            container.classList.remove('hidden');
+            return;
+        }
+
+        list.innerHTML = results.map(r => `
+            <button type="button" onclick="selectGlobalLocation(${r.latitude}, ${r.longitude}, '${r.label.replace(/'/g, "\\'")}')" class="w-full text-left px-4 py-2.5 hover:bg-emerald-50/80 dark:hover:bg-slate-800 transition flex items-center justify-between group">
+                <div class="flex items-center space-x-2.5">
+                    <span class="text-sm">📍</span>
+                    <div>
+                        <span class="font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400">${r.name}</span>
+                        <span class="text-slate-500 text-[11px] block">${[r.admin1, r.country].filter(Boolean).join(', ')}</span>
+                    </div>
+                </div>
+                <span class="text-[10px] text-slate-400 font-mono">${r.latitude}°, ${r.longitude}°</span>
+            </button>
+        `).join('');
+
+        container.classList.remove('hidden');
+    }
+
+    function hideSuggestions() {
+        const container = document.getElementById('locationSuggestionsContainer');
+        if (container) container.classList.add('hidden');
+    }
+
+    // Close suggestions dropdown on outside click
+    document.addEventListener('click', function(e) {
+        const container = document.getElementById('locationSuggestionsContainer');
+        const input = document.getElementById('globalLocationInput');
+        if (container && !container.contains(e.target) && e.target !== input) {
+            hideSuggestions();
+        }
+    });
 
     function detectUserLocation() {
         const btn = document.getElementById('btnDetectGPS');
