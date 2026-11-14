@@ -563,5 +563,17 @@ class LeafDoctorAndNDVITests(TestCase):
         self.assertIn('mean_ndvi', data)
         self.assertIn('palette', data)
 
+    def test_presentation_view(self):
+        res = self.client.get(reverse('presentation'))
+        self.assertEqual(res.status_code, 200)
+        self.assertContains(res, 'AgriOptima 3D')
+        self.assertContains(res, 'Index & Project Roadmap')
+
+    def test_presentation_download_view(self):
+        res = self.client.get(reverse('download_presentation'))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res['Content-Type'], 'application/vnd.openxmlformats-officedocument.presentationml.presentation')
+
+
 
 

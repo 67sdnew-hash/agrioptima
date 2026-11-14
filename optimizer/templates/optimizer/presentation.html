@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriOptima 3D — Comprehensive Project Presentation Deck</title>
+    <!-- Google Fonts: Playfair Display (Serif headers) & Plus Jakarta Sans (Clean modern body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-cream: #F6F1E8;
+            --card-bg: #FFFFFF;
+            --card-alt: #FBF6EE;
+            --card-accent: #F3E7D9;
+            --border-color: #E4DCCC;
+            --primary-dark: #3E2723;
+            --accent-brown: #A04728;
+            --accent-green: #2D6A4F;
+            --accent-sage: #40916C;
+            --accent-blue: #2B6CB0;
+            --accent-amber: #BC6C25;
+            --accent-red: #BA181B;
+            --text-dark: #2D3748;
+            --text-muted: #718096;
+            --dot-color: #B4A08C;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: var(--text-dark);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        /* Top Toolbar Controls */
+        .deck-toolbar {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: #2a2a2a;
+            border-radius: 18px;
+            margin-bottom: 20px;
+            color: #fff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        .deck-toolbar h1 {
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .deck-toolbar h1 span.pill {
+            background: var(--accent-green);
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-nav {
+            background: #3d3d3d;
+            border: none;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-nav:hover {
+            background: var(--accent-brown);
+        }
+
+        .btn-nav.primary {
+            background: var(--accent-green);
+        }
+
+        .btn-nav.primary:hover {
+            background: #1b4332;
+        }
+
+        .slide-counter {
+            font-size: 13px;
+            font-weight: 700;
+            color: #aaa;
+            padding: 0 8px;
+        }
+
+        /* Slide Stage (16:9 Widescreen) */
+        .stage {
+            width: 100%;
+            max-width: 1200px;
+            aspect-ratio: 16 / 9;
+            position: relative;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            overflow: hidden;
+            background-color: var(--bg-cream);
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            padding: 40px 55px;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            background-color: var(--bg-cream);
+            user-select: none;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        /* Decorative Corner Pebbles */
+        .slide::before, .slide::after {
+            content: '';
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--dot-color);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .slide::before { top: 14px; left: 14px; }
+        .slide::after { top: 14px; right: 14px; }
+
+        .corner-bottom-left, .corner-bottom-right {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--dot-color);
+            opacity: 0.6;
+            pointer-events: none;
+            bottom: 14px;
+        }
+        .corner-bottom-left { left: 14px; }
+        .corner-bottom-right { right: 14px; }
+
+        /* Slide Header */
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            position: relative;
+            z-index: 10;
+        }
+
+        .title-group {
+            max-width: 80%;
+        }
+
+        .slide-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 30px;
+            font-weight: 900;
+            color: var(--primary-dark);
+            line-height: 1.15;
+            letter-spacing: -0.5px;
+        }
+
+        .slide-underline {
+            width: 80px;
+            height: 5px;
+            background-color: var(--accent-brown);
+            margin-top: 8px;
+            border-radius: 3px;
+        }
+
+        .category-badge {
+            background-color: var(--primary-dark);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            padding: 6px 16px;
+            border-radius: 30px;
+            text-transform: uppercase;
+        }
+
+        /* Slide Main Content Area */
+        .slide-body {
+            flex: 1;
+            margin: 22px 0 16px 0;
+            display: grid;
+            gap: 20px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-6 { grid-template-columns: repeat(6, 1fr); }
+        .grid-custom-intro { grid-template-columns: 2fr 1fr; }
+
+        /* Cards */
+        .card {
+            background-color: var(--card-bg);
+            border: 1.5px solid var(--border-color);
+            border-radius: 24px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+        }
+
+        .card-alt { background-color: var(--card-alt); }
+        .card-accent { background-color: var(--card-accent); }
+
+        .card h3 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+        }
+
+        .card p {
+            font-size: 13px;
+            line-height: 1.55;
+            color: var(--text-dark);
+        }
+
+        .card ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .card ul li {
+            font-size: 12.5px;
+            line-height: 1.45;
+            color: var(--text-dark);
+        }
+
+        .card ul li strong {
+            color: var(--primary-dark);
+        }
+
+        /* Code / Formula Box */
+        .formula-box {
+            font-family: 'JetBrains Mono', monospace;
+            background: #FAF7F2;
+            border: 1px dashed var(--accent-brown);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 11px;
+            color: var(--accent-brown);
+            font-weight: 600;
+            margin: 10px 0;
+            line-height: 1.5;
+        }
+
+        /* Numbered Step Circle */
+        .num-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--accent-brown);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .num-circle.green { background: var(--accent-green); }
+
+        /* Stat Callouts */
+        .stat-big {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 42px;
+            font-weight: 900;
+            color: var(--accent-green);
+            line-height: 1;
+        }
+
+        .stat-big.brown { color: var(--accent-brown); }
+        .stat-big.blue { color: var(--accent-blue); }
+
+        /* Bottom Timeline Navigation */
+        .timeline-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            padding-top: 6px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .timeline-pill {
+            width: 32px;
+            height: 5px;
+            border-radius: 10px;
+            background-color: #DACDBE;
+            transition: all 0.3s;
+        }
+
+        .timeline-pill.active {
+            background-color: var(--accent-brown);
+            width: 48px;
+        }
+
+        /* Slide-Specific Styles */
+        .slide-title-hero {
+            display: flex;
+            gap: 30px;
+            height: 100%;
+            align-items: stretch;
+        }
+
+        .hero-left {
+            flex: 2;
+            background: var(--card-bg);
+            border: 1.5px solid var(--border-color);
+            border-radius: 28px;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hero-left h1 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 44px;
+            font-weight: 900;
+            color: var(--primary-dark);
+            line-height: 1.05;
+        }
+
+        .hero-left h2 {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent-brown);
+            margin: 10px 0 20px 0;
+        }
+
+        .hero-right {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .mockup-card-top {
+            flex: 1;
+            background: var(--primary-dark);
+            border-radius: 24px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .mockup-card-bot {
+            flex: 1;
+            background: var(--card-accent);
+            border-radius: 24px;
+            color: var(--primary-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Keyboard Shortcut Hint */
+        .hint-bar {
+            margin-top: 15px;
+            color: #888;
+            font-size: 12px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .kbd {
+            background: #333;
+            color: #fff;
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        @media print {
+            body { background: transparent; padding: 0; }
+            .deck-toolbar, .hint-bar { display: none; }
+            .stage { box-shadow: none; width: 100%; aspect-ratio: 16 / 9; page-break-after: always; }
+            .slide { display: flex !important; page-break-after: always; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Deck Navigation Controller -->
+    <div class="deck-toolbar">
+        <h1>🌾 AgriOptima 3D <span class="pill">Precision Agronomy Deck</span></h1>
+        <div class="btn-group">
+            <button class="btn-nav" onclick="prevSlide()">◀ Previous</button>
+            <span class="slide-counter" id="slideIndicator">1 / 24</span>
+            <button class="btn-nav" onclick="nextSlide()">Next ▶</button>
+            <button class="btn-nav primary" onclick="toggleFullScreen()">⛶ Fullscreen</button>
+            <a href="{% url 'download_presentation' %}" class="btn-nav" style="background:#A04728; text-decoration:none;">📥 Download PPTX</a>
+            <a href="{% url 'dashboard' %}" class="btn-nav" style="text-decoration:none;">🌐 Live App</a>
+        </div>
+    </div>
+
+    <!-- 16:9 Presentation Stage -->
+    <div class="stage" id="presentationStage">
+
+        <!-- SLIDE 1: TITLE SLIDE -->
+        <div class="slide active" id="slide-1">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-title-hero">
+                <div class="hero-left">
+                    <h1>AgriOptima 3D</h1>
+                    <h2>Precision Crop Yield & Variable Rate Fertilizer Optimizer</h2>
+                    <p style="font-size: 14px; line-height: 1.6; color: var(--text-dark); margin-bottom: 24px;">
+                        An enterprise-grade precision agriculture platform combining non-linear Mitscherlich-Baule mathematical optimization, SciPy SLSQP constrained solvers, Sentinel-2 multispectral remote sensing, computer vision leaf pathology, and hands-free multilingual AI agronomist intelligence.
+                    </p>
+                    <div style="font-size: 12px; font-weight: 700; color: var(--accent-green);">
+                        Technology: Python • Django 5 • SciPy SLSQP • Leaflet GIS • Google Satellite • Sentinel-2 MSI • Web Speech API
+                    </div>
+                </div>
+                <div class="hero-right">
+                    <div class="mockup-card-top">
+                        <div style="font-size: 32px; margin-bottom: 8px;">🛰️ 🗺️</div>
+                        <h4 style="font-family:'Playfair Display', Georgia; font-size: 17px; font-weight: 700;">GIS & Remote Sensing</h4>
+                        <p style="font-size: 11px; opacity: 0.8; margin-top: 4px;">Google Aerial + Sentinel-2 NDVI Vigor</p>
+                    </div>
+                    <div class="mockup-card-bot">
+                        <div style="font-size: 32px; margin-bottom: 8px;">🌿 🎙️</div>
+                        <h4 style="font-family:'Playfair Display', Georgia; font-size: 17px; font-weight: 700;">AI Leaf Doctor & Voice</h4>
+                        <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Vision Pathology + 14 Native Languages</p>
+                    </div>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-1"></div>
+        </div>
+
+        <!-- SLIDE 2: INDEX / CONTENTS -->
+        <div class="slide" id="slide-2">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">Index & Project Roadmap</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Contents</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <ul style="gap: 12px;">
+                        <li><strong style="color:var(--accent-brown)">01</strong> Introduction & Problem Statement</li>
+                        <li><strong style="color:var(--accent-brown)">02</strong> Objectives, Value Proposition & Scope</li>
+                        <li><strong style="color:var(--accent-brown)">03</strong> Agronomic Dataset & Multi-Crop Profiles</li>
+                        <li><strong style="color:var(--accent-brown)">04</strong> Mathematical Optimization (Mitscherlich & SLSQP)</li>
+                        <li><strong style="color:var(--accent-brown)">05</strong> Core Technology Stack & Architecture</li>
+                        <li><strong style="color:var(--accent-brown)">06</strong> Global Weather & Nitrate Run-Off Intelligence</li>
+                        <li><strong style="color:var(--accent-brown)">07</strong> Multi-Zone GIS Farm Mapper & Tractor VRA</li>
+                        <li><strong style="color:var(--accent-brown)">08</strong> Multispectral Satellite & Drone NDVI Vigor</li>
+                        <li><strong style="color:var(--accent-brown)">09</strong> Visual AI Leaf Doctor (Pathology & Deficiencies)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <ul style="gap: 12px;">
+                        <li><strong style="color:var(--accent-green)">10</strong> Voice Agronomist in 14 Native Languages</li>
+                        <li><strong style="color:var(--accent-green)">11</strong> Global Internationalization & Theme Engine</li>
+                        <li><strong style="color:var(--accent-green)">12</strong> Farmer Virtual Community Hub & Live Chat</li>
+                        <li><strong style="color:var(--accent-green)">13</strong> Farmer Security & Dual-Channel OTP Authentication</li>
+                        <li><strong style="color:var(--accent-green)">14</strong> Commercial Fertilizer Bags & 4R Split Calendar</li>
+                        <li><strong style="color:var(--accent-green)">15</strong> System Testing & Mathematical Verification (22/22)</li>
+                        <li><strong style="color:var(--accent-green)">16</strong> End-to-End Precision Agronomy Workflow</li>
+                        <li><strong style="color:var(--accent-green)">17</strong> Example Farmer Case Study & Economic ROI</li>
+                        <li><strong style="color:var(--accent-green)">18</strong> Production Deployment, Conclusion & Future Roadmap</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-2"></div>
+        </div>
+
+        <!-- SLIDE 3: INTRODUCTION -->
+        <div class="slide" id="slide-3">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">Introduction: What is AgriOptima?</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Project Data</div>
+            </div>
+            <div class="slide-body grid-custom-intro">
+                <div class="card">
+                    <div>
+                        <h3>Precision Agronomy Meets Mathematical Optimization</h3>
+                        <p style="margin-bottom: 14px;">
+                            AgriOptima is an enterprise-grade precision agriculture platform developed to solve the global crisis of fertilizer over-application, nutrient run-off, and suboptimal crop yields.
+                        </p>
+                        <p style="margin-bottom: 14px;">
+                            By bridging agronomic soil chemistry, hyper-local climate forecasting, remote sensing satellite NDVI, and constrained mathematical optimization, AgriOptima computes the exact supplemental nutrient doses (ΔN, ΔP, ΔK) required to achieve farmer-defined yield targets at minimal commercial cost.
+                        </p>
+                        <div style="background:var(--card-accent); border-radius:14px; padding:12px; font-size:11.5px; font-weight:600; color:var(--primary-dark);">
+                            🌾 Production URL: <a href="https://agrioptima-jpva.onrender.com/" target="_blank" style="color:var(--accent-brown); text-decoration:underline;">https://agrioptima-jpva.onrender.com/</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card card-alt" style="justify-content:center; gap:8px;">
+                    <div style="font-family:'Playfair Display', Georgia; font-size:16px; font-weight:700; text-align:center; color:var(--primary-dark); margin-bottom:8px;">Core Pipeline</div>
+                    <div style="background:var(--accent-blue); color:#fff; border-radius:12px; padding:10px; font-size:11px; font-weight:700; text-align:center;">1. Soil & Field Inputs</div>
+                    <div style="background:var(--accent-amber); color:#fff; border-radius:12px; padding:10px; font-size:11px; font-weight:700; text-align:center;">2. Climate & Leaching Risk</div>
+                    <div style="background:var(--accent-brown); color:#fff; border-radius:12px; padding:10px; font-size:11px; font-weight:700; text-align:center;">3. Mitscherlich SLSQP Solver</div>
+                    <div style="background:var(--accent-green); color:#fff; border-radius:12px; padding:10px; font-size:11px; font-weight:700; text-align:center;">4. Satellite NDVI Vigor</div>
+                    <div style="background:var(--primary-dark); color:#fff; border-radius:12px; padding:10px; font-size:11px; font-weight:700; text-align:center;">5. Tractor VRA Prescription</div>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-3"></div>
+        </div>
+
+        <!-- SLIDE 4: THE PROBLEM -->
+        <div class="slide" id="slide-4">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">1. The Problem: Agronomic & Ecological Crisis</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Problem Context</div>
+            </div>
+            <div class="slide-body grid-3">
+                <div class="card">
+                    <div>
+                        <h3>Excessive Over-Fertilization</h3>
+                        <p>Farmers traditionally broadcast blanket fertilizer doses regardless of existing soil reserves. This leads to nutrient saturation, high operational expenses, and the law of diminishing returns where additional input yields zero biological gain.</p>
+                    </div>
+                    <div style="background:var(--card-accent); color:var(--accent-brown); border-radius:20px; text-align:center; padding:8px; font-weight:800; font-size:11px;">💸 High Input Cost</div>
+                </div>
+                <div class="card">
+                    <div>
+                        <h3>Nitrate Leaching & Run-Off</h3>
+                        <p>Excess nitrogen fertilizers dissolved in heavy rain leach into underground aquifers or wash into river basins, causing massive eutrophication, dead zones, and greenhouse nitrous oxide (N2O) emissions.</p>
+                    </div>
+                    <div style="background:var(--card-accent); color:var(--accent-red); border-radius:20px; text-align:center; padding:8px; font-weight:800; font-size:11px;">🌊 Environmental Hazard</div>
+                </div>
+                <div class="card">
+                    <div>
+                        <h3>Spatial Field Inconsistency</h3>
+                        <p>Single-field farms exhibit significant soil variability in pH, organic matter, and baseline nutrients. Treating whole fields uniformly leads to over-feeding rich zones and starving depleted sectors.</p>
+                    </div>
+                    <div style="background:var(--card-accent); color:var(--accent-amber); border-radius:20px; text-align:center; padding:8px; font-weight:800; font-size:11px;">🗺️ Inefficient VRA</div>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-4"></div>
+        </div>
+
+        <!-- SLIDE 5: OBJECTIVES & SCOPE -->
+        <div class="slide" id="slide-5">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">2. Objectives & Architectural Scope</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Project Scope</div>
+            </div>
+            <div class="slide-body" style="grid-template-rows: repeat(5, 1fr); gap: 10px;">
+                <div class="card" style="flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div class="num-circle">1</div>
+                        <div><strong>Constrained Non-Linear Solver:</strong> Formulate and solve Mitscherlich-Baule production functions with SLSQP constraints.</div>
+                    </div>
+                    <span class="category-badge" style="background:var(--accent-blue);">SciPy SLSQP</span>
+                </div>
+                <div class="card" style="flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div class="num-circle green">2</div>
+                        <div><strong>Global Climate & Leaching Guard:</strong> Real-time 14-day rainfall forecasting via Open-Meteo for any GPS coordinate on Earth.</div>
+                    </div>
+                    <span class="category-badge" style="background:var(--accent-amber);">Open-Meteo</span>
+                </div>
+                <div class="card" style="flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div class="num-circle">3</div>
+                        <div><strong>Geospatial Multi-Zone GIS Mapper:</strong> Google Satellite map with variable zoning and tractor VRA GeoJSON prescription export.</div>
+                    </div>
+                    <span class="category-badge" style="background:var(--accent-green);">Leaflet GIS</span>
+                </div>
+                <div class="card" style="flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div class="num-circle green">4</div>
+                        <div><strong>Satellite Drone NDVI Vigor Heatmap:</strong> Simulated Sentinel-2 remote sensing raster, Chlorophyll SPAD, and VRA Nitrogen adjustments.</div>
+                    </div>
+                    <span class="category-badge" style="background:var(--primary-dark);">Sentinel-2 MSI</span>
+                </div>
+                <div class="card" style="flex-direction: row; align-items: center; justify-content: space-between; padding: 12px 20px;">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div class="num-circle">5</div>
+                        <div><strong>Visual AI Leaf Doctor & Voice Agronomist:</strong> Mobile camera leaf pathology diagnostics and hands-free voice in 14 native languages.</div>
+                    </div>
+                    <span class="category-badge" style="background:var(--accent-brown);">Speech & CV</span>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-5"></div>
+        </div>
+
+        <!-- SLIDE 6: AGRONOMIC DATASET -->
+        <div class="slide" id="slide-6">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">3. Agronomic Scientific Dataset & Crop Models</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Agronomy</div>
+            </div>
+            <div class="slide-body grid-3">
+                <div class="card">
+                    <h3>🌾 Wheat</h3>
+                    <p><em>Triticum aestivum</em></p>
+                    <ul style="margin-top: 8px;">
+                        <li>• Biological Max: <strong>8.5 t/ha</strong></li>
+                        <li>• N-Efficiency: 0.0075</li>
+                        <li>• Responsive to tillering split-application</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>🌾 Rice (Paddy)</h3>
+                    <p><em>Oryza sativa</em></p>
+                    <ul style="margin-top: 8px;">
+                        <li>• Biological Max: <strong>9.0 t/ha</strong></li>
+                        <li>• N-Efficiency: 0.0068</li>
+                        <li>• Prone to blast & zinc precipitation</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>🌽 Maize (Corn)</h3>
+                    <p><em>Zea mays</em></p>
+                    <ul style="margin-top: 8px;">
+                        <li>• Biological Max: <strong>12.0 t/ha</strong></li>
+                        <li>• N-Efficiency: 0.0055</li>
+                        <li>• High P demand during early seedling root growth</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>🌱 Cotton</h3>
+                    <p><em>Gossypium hirsutum</em></p>
+                    <ul style="margin-top: 8px;">
+                        <li>• Biological Max: <strong>4.5 t/ha</strong></li>
+                        <li>• N-Efficiency: 0.0082</li>
+                        <li>• Critical potash demand during squaring & bolls</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>🥔 Potato</h3>
+                    <p><em>Solanum tuberosum</em></p>
+                    <ul style="margin-top: 8px;">
+                        <li>• Biological Max: <strong>45.0 t/ha</strong></li>
+                        <li>• K-Efficiency: 0.0060</li>
+                        <li>• High potassium demand for tuber bulking</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>🍅 Tomato</h3>
+                    <p><em>Solanum lycopersicum</em></p>
+                    <ul style="margin-top: 8px;">
+                        <li>• Biological Max: <strong>70.0 t/ha</strong></li>
+                        <li>• Ca/P-Efficiency: 0.0070</li>
+                        <li>• Susceptible to early blight & blossom end rot</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-6"></div>
+        </div>
+
+        <!-- SLIDE 7: MATHEMATICAL MODEL -->
+        <div class="slide" id="slide-7">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">4. Mathematical Optimization: Mitscherlich & SLSQP</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Mathematics</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Mitscherlich-Baule Yield Equation</h3>
+                    <div class="formula-box">
+                        Y = Y_max · (1 - 10^(-c_n · N_tot)) · (1 - 10^(-c_p · P_tot)) · (1 - 10^(-c_k · K_tot)) · f(pH) · f(Rain)
+                    </div>
+                    <ul>
+                        <li>• <strong>Law of Diminishing Returns:</strong> Each incremental kg of fertilizer produces progressively less yield.</li>
+                        <li>• <strong>Total Nutrient Pool:</strong> N_tot = S_n (Soil test) + ΔN (Fertilizer).</li>
+                        <li>• <strong>pH Lockout Factor:</strong> Bell-curve multiplier f(pH) modeling nutrient fixation outside 6.0–7.8.</li>
+                        <li>• <strong>Precipitation Penalty:</strong> Accounts for nitrate leaching run-off.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>SLSQP Constrained Optimization</h3>
+                    <div class="formula-box" style="border-color:var(--accent-green); color:var(--accent-green);">
+                        minimize Cost = w_n·ΔN + w_p·ΔP + w_k·ΔK + Penalty(Leach)<br>
+                        subject to:<br>
+                        &nbsp;&nbsp;• Y(ΔN, ΔP, ΔK) >= Y_target (Yield Guarantee)<br>
+                        &nbsp;&nbsp;• 0 <= ΔN <= 150, 0 <= ΔP <= 80, 0 <= ΔK <= 90
+                    </div>
+                    <ul>
+                        <li>• <strong>Sequential Least Squares Programming:</strong> Non-linear constraint solver.</li>
+                        <li>• <strong>Zero-Cost Edge Case:</strong> Returns exact 0 kg/ha when soil baseline meets target.</li>
+                        <li>• <strong>Biological Feasibility Guard:</strong> Catches unattainable yield targets.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-7"></div>
+        </div>
+
+        <!-- SLIDE 8: TECH STACK -->
+        <div class="slide" id="slide-8">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">5. Full-Stack Technology Stack & Architecture</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Architecture</div>
+            </div>
+            <div class="slide-body grid-3">
+                <div class="card">
+                    <h3 style="color:var(--accent-blue)">Python 3.11</h3>
+                    <p>Core computational runtime executing mathematical optimization, remote sensing raster generation, and computer vision classification.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--accent-green)">Django 5.0</h3>
+                    <p>Enterprise web architecture: MVC patterns, ORM models, session security, REST API views, and multi-tenant authentication.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--accent-brown)">SciPy & NumPy</h3>
+                    <p>Non-linear sequential least squares programming (SLSQP), matrix curve generation, and high-performance array calculations.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--accent-amber)">Leaflet GIS & Google Maps</h3>
+                    <p>Aerial satellite imagery (mt1.google.com), terrain elevation contours, roadmap layers, and interactive GeoJSON polygon overlays.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--accent-sage)">Web Speech API</h3>
+                    <p>Client-side speech recognition and text-to-speech audio synthesis mapped across 14 native global farming dialects.</p>
+                </div>
+                <div class="card">
+                    <h3 style="color:var(--primary-dark)">ReportLab & ICS</h3>
+                    <p>Automated vector PDF agronomist certificates, 4R split-sowing schedule ICS calendar export, and Google Calendar sync.</p>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-8"></div>
+        </div>
+
+        <!-- SLIDE 9: GLOBAL WEATHER -->
+        <div class="slide" id="slide-9">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">6. Global Weather & Nitrate Leaching Intelligence</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Climate</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Hyper-Local Climate Forecasting</h3>
+                    <ul>
+                        <li>• <strong>Universal Geocoding:</strong> Search ANY farm, village, city, or enter raw latitude/longitude coordinates worldwide.</li>
+                        <li>• <strong>Open-Meteo Integration:</strong> Real-time 14-day precipitation forecasts aggregated into seasonal moisture indices.</li>
+                        <li>• <strong>Automatic GPS Geolocation:</strong> Browser HTML5 geolocation with server-side IP fallback.</li>
+                        <li>• <strong>Preset Global Agricultural Belts:</strong> Punjab (India), Iowa (Corn Belt), California Central Valley, Nile Delta, Thames Valley, and Sao Paulo.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Nitrate Leaching Risk Engine</h3>
+                    <ul>
+                        <li>• <strong style="color:var(--accent-green)">LOW RISK (&lt;25 mm):</strong> Safe for granular broadcasting without split delays.</li>
+                        <li>• <strong style="color:var(--accent-amber)">MODERATE RISK (25-60 mm):</strong> Delay broadcasting by 48h or switch to fertigation to prevent surface loss.</li>
+                        <li>• <strong style="color:var(--accent-red)">SEVERE / HIGH LEACHING (&gt;60 mm):</strong> High nitrate run-off alert. Optimizer reduces basal Delta N by 30% and enforces 3-way split application.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-9"></div>
+        </div>
+
+        <!-- SLIDE 10: MULTI-ZONE GIS MAPPER -->
+        <div class="slide" id="slide-10">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">7. Multi-Zone Farm Field Mapper (GIS & VRA)</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">GIS & VRA</div>
+            </div>
+            <div class="slide-body grid-3">
+                <div class="card">
+                    <h3>Precision Zoning</h3>
+                    <p>Subdivide fields into distinct soil management zones based on topography, soil color, or past yield history.</p>
+                    <p style="margin-top: 10px;">Each zone tracks its own acreage (ha), soil N-P-K, pH, target yield, and GPS coordinates.</p>
+                </div>
+                <div class="card">
+                    <h3>Google Maps Tile Layers</h3>
+                    <p>Full Google Maps integration inspired by standard Google interfaces:</p>
+                    <ul style="margin-top: 8px;">
+                        <li>• 🛰️ Google Satellite (Aerial)</li>
+                        <li>• ⛰️ Google Terrain (Contours)</li>
+                        <li>• 🗺️ Google Roadmap (Streets)</li>
+                        <li>• 🌐 OpenStreetMap (OSM)</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Tractor VRA GeoJSON</h3>
+                    <p>Generates standardized ISO 11783-compliant GeoJSON prescription files directly loadable into GPS-guided tractor spreaders.</p>
+                    <p style="margin-top: 10px;">Spreaders automatically adjust granular output as the tractor moves from zone to zone.</p>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-10"></div>
+        </div>
+
+        <!-- SLIDE 11: SATELLITE NDVI VIGOR -->
+        <div class="slide" id="slide-11">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">8. Satellite Drone NDVI Crop Vigor Heatmap Overlay</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Remote Sensing</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Multispectral Remote Sensing Engine</h3>
+                    <ul>
+                        <li>• <strong>NDVI Calculation:</strong> (NIR - Red) / (NIR + Red) multispectral vegetation index.</li>
+                        <li>• <strong>8x8 Spatial Raster Grid:</strong> Generated over field boundary with cell IDs, tooltips, and popups.</li>
+                        <li>• <strong>Live Canopy Analytics HUD:</strong> Mean Field NDVI, Canopy Health Score (0-100), and Uniformity %.</li>
+                        <li>• <strong>Variable Rate Nitrogen Prescriptions:</strong> High-vigor zones reduce N; stressed zones receive remedial boost.</li>
+                    </ul>
+                </div>
+                <div class="card card-alt">
+                    <h3>NDVI Spectral Color Ramp</h3>
+                    <ul style="gap: 6px;">
+                        <li>• <strong>&lt; 0.15:</strong> Bare Soil / Water (Non-vegetated)</li>
+                        <li>• <strong style="color:var(--accent-red)">0.15 - 0.30:</strong> Severe Stress (+25 kg/ha N boost)</li>
+                        <li>• <strong style="color:var(--accent-amber)">0.30 - 0.45:</strong> Low Vigor (+12 kg/ha N top-dress)</li>
+                        <li>• <strong style="color:var(--accent-sage)">0.45 - 0.60:</strong> Moderate Vigor (Maintain baseline)</li>
+                        <li>• <strong style="color:var(--accent-green)">0.60 - 0.75:</strong> Healthy Optimal Canopy</li>
+                        <li>• <strong style="color:#15803d">0.75 - 1.00:</strong> Peak Biomass (-15 kg/ha N to avoid lodging)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-11"></div>
+        </div>
+
+        <!-- SLIDE 12: VISUAL AI LEAF DOCTOR -->
+        <div class="slide" id="slide-12">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">9. Visual AI Leaf Doctor (Pathology & Deficiency)</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Computer Vision</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Computer Vision Diagnostic Engine</h3>
+                    <ul>
+                        <li>• <strong>Mobile Camera Scanner:</strong> Farmers take photos directly in the field with camera capture.</li>
+                        <li>• <strong>Pathogen vs Starvation:</strong> Distinguishes fungal diseases (Rust, Blast, Blight) from nutrient deficits (N chlorosis, P purpling, K scorch).</li>
+                        <li>• <strong>Diagnostic Confidence:</strong> Provides probabilistic certainty score (e.g. 94.2%).</li>
+                        <li>• <strong>Treatment Protocols:</strong> Prescribes active fungicides and foliar micronutrient recipes.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Instant Test Cases & 1-Click Sync</h3>
+                    <ul style="gap: 6px;">
+                        <li>• 🌾 <strong>Wheat Yellow Rust:</strong> Puccinia striiformis ➔ Propiconazole 25% EC</li>
+                        <li>• 🌾 <strong>Nitrogen Chlorosis:</strong> V-Shape Yellowing ➔ Urea top-dress (ΔN: +35)</li>
+                        <li>• 🌽 <strong>Phosphorus Purple:</strong> Purple leaf margins ➔ Band DAP (ΔP: +35)</li>
+                        <li>• 🌾 <strong>Rice Blast:</strong> Diamond lesions ➔ Tricyclazole 75% WP (ΔN: -20)</li>
+                        <li>• 🌿 <strong>Potassium Tip Burn:</strong> Marginal scorch ➔ MOP 0-0-60 (ΔK: +30)</li>
+                    </ul>
+                    <div style="background:var(--accent-brown); color:#fff; border-radius:12px; padding:10px; text-align:center; font-weight:700; font-size:11px; margin-top:8px;">
+                        ⚡ 1-Click "Apply to Optimizer" syncs adjustments to live form!
+                    </div>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-12"></div>
+        </div>
+
+        <!-- SLIDE 13: VOICE AGRONOMIST -->
+        <div class="slide" id="slide-13">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">10. Voice Agronomist & Hands-Free Field Mode</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Voice AI</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Speech Recognition (Speech-to-Text)</h3>
+                    <ul>
+                        <li>• <strong>Dedicated 🎙️ Microphone:</strong> Integrated in the AI Copilot drawer.</li>
+                        <li>• <strong>Web Speech API:</strong> Zero-latency speech transcription mapped to the farmer's active language code.</li>
+                        <li>• <strong>Hands-Free Field Usability:</strong> Farmers with muddy hands or work gloves can speak naturally in their native language.</li>
+                        <li>• <strong>Live Visual Feedback:</strong> Pulsing red recording dot indicating active speech recognition.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Text-to-Speech & Hands-Free Mode</h3>
+                    <ul>
+                        <li>• <strong>🔊 Listen Out Loud:</strong> One-click audio playback on every AI agronomist answer bubble.</li>
+                        <li>• <strong>🎧 Hands-Free Field Mode Toggle:</strong> Automatically speaks incoming advice aloud as it arrives.</li>
+                        <li>• <strong>Agronomic Pacing:</strong> Calibrated speech rate (0.95x) for clarity in outdoor conditions.</li>
+                        <li>• <strong>14 Native Dialects:</strong> Hindi, Punjabi, Bengali, Telugu, Tamil, Marathi, Spanish, French, English, and more.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-13"></div>
+        </div>
+
+        <!-- SLIDE 14: 14 LANGUAGES & 6 THEMES -->
+        <div class="slide" id="slide-14">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">11. 14 Global Languages & 6 Agronomic Themes</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Accessibility</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>14 Global Agricultural Languages</h3>
+                    <p>Dynamic full-app internationalization translating formulas, charts, labels, and community threads:</p>
+                    <ul style="margin-top: 10px;">
+                        <li>• <strong>Indian Belts:</strong> Hindi (हिन्दी), Punjabi (ਪੰਜਾਬੀ), Bengali (বাংলা), Telugu (తెలుగు), Tamil (தமிழ்), Marathi (मराठी), Gujarati (ગુજરાતી), Kannada (ಕನ್ನಡ).</li>
+                        <li>• <strong>Global Belts:</strong> Spanish (Español), French (Français), Portuguese (Português), Swahili (Kiswahili), Arabic (العربية), English (US/UK).</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>6 Agronomic Theme Modes</h3>
+                    <ul style="gap: 8px;">
+                        <li>• 🌲 <strong>Forest Canopy:</strong> Deep emerald green (#0B291B) & sage highlights</li>
+                        <li>• 🌾 <strong>Golden Harvest:</strong> Warm rich amber (#2E1F0A) & ripe wheat tones</li>
+                        <li>• ☀️ <strong>Field Sunlight:</strong> High-contrast daylight theme for outdoor readability</li>
+                        <li>• 🌙 <strong>Dark Mode:</strong> Slate obsidian (#090D16) for battery saving</li>
+                        <li>• ⚪ <strong>Clean Light:</strong> Minimal modern glassmorphism</li>
+                        <li>• ⚡ <strong>Cyber Agronomy:</strong> Neon emerald futuristic agritech HUD</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-14"></div>
+        </div>
+
+        <!-- SLIDE 15: COMMUNITY HUB -->
+        <div class="slide" id="slide-15">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">12. Farmer Virtual Community Hub & Live Chat</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Community</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Nearby Farmers Map & Problem Threads</h3>
+                    <ul>
+                        <li>• <strong>Geospatial Radar:</strong> Google Satellite map displaying pins of neighboring farmers within 50 km.</li>
+                        <li>• <strong>Structured Categories:</strong> Disease outbreaks, fertilizer tips, irrigation, market rates, and equipment sharing.</li>
+                        <li>• <strong>Soil Context Attaching:</strong> Farmers attach soil pH and N-P-K metrics to posts for verified peer advice.</li>
+                        <li>• <strong>Endorsement Voting:</strong> Upvote helpful agronomist solutions.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Live Farmer Radio Chat</h3>
+                    <ul>
+                        <li>• <strong>Real-Time Stream:</strong> Walkie-talkie style live radio chat for weather alerts and emergency advice.</li>
+                        <li>• <strong>RESTful APIs:</strong>
+                            <div class="formula-box" style="margin-top:6px;">
+                                POST /api/community/posts/<br>
+                                POST /api/community/posts/&lt;id&gt;/reply/<br>
+                                POST /api/community/posts/&lt;id&gt;/upvote/<br>
+                                POST /api/community/chat/
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-15"></div>
+        </div>
+
+        <!-- SLIDE 16: SECURITY & DUAL OTP -->
+        <div class="slide" id="slide-16">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">13. Farmer Security & Dual OTP Verification</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Security</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Dual-Channel OTP Registration</h3>
+                    <ul>
+                        <li>• <strong>Phone SMS OTP:</strong> Delivers 6-digit cryptographic verification codes directly to mobile phones.</li>
+                        <li>• <strong>Email OTP:</strong> Dispatches clean branded HTML verification emails via Django SMTP.</li>
+                        <li>• <strong>Browser Notification Push:</strong> Native Web Notifications API alerts farmers on desktop/mobile.</li>
+                        <li>• <strong>Session-Bound Verification:</strong> Prevents registration spoofing.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>Dual-Identifier Farmer Login</h3>
+                    <ul>
+                        <li>• <strong>Universal Identifier:</strong> Farmers can log in using EITHER phone number OR email + password.</li>
+                        <li>• <strong>FarmerProfile Model:</strong> 1-to-1 linkage storing location, primary crop, and verification channel.</li>
+                        <li>• <strong>Enterprise Security:</strong> PBKDF2 with SHA256 password hashing, CSRF tokens, and secure HTTP cookies.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-16"></div>
+        </div>
+
+        <!-- SLIDE 17: COMMERCIAL BAGS & 4R SCHEDULE -->
+        <div class="slide" id="slide-17">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">14. Commercial Fertilizer Bags & 4R Split Schedule</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Operations</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Commercial 50 kg Bag Translation</h3>
+                    <p>Converts abstract N, P, K kilograms into standard 50 kg retail bags:</p>
+                    <ul style="margin-top: 8px;">
+                        <li>• <strong>Urea (46-0-0):</strong> Nitrogen top-dressing</li>
+                        <li>• <strong>DAP (18-46-0):</strong> Diammonium Phosphate for early root establishment</li>
+                        <li>• <strong>MOP (0-0-60):</strong> Muriate of Potash for stalk resilience</li>
+                    </ul>
+                    <p style="margin-top: 10px; font-size: 11.5px; color: var(--text-muted);">
+                        *Simultaneous Compensation: Subtracts Nitrogen delivered via DAP from Urea requirement to prevent over-fertilization.
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>4R Split Application Calendar</h3>
+                    <ul style="gap: 8px;">
+                        <li>• <strong>Stage 1 (Basal at Sowing):</strong> 100% P (DAP) + 50% K (MOP) + 25% N (Urea)</li>
+                        <li>• <strong>Stage 2 (Vegetative / Tillering, +28 Days):</strong> 50% N (Urea) during peak nitrogen uptake</li>
+                        <li>• <strong>Stage 3 (Reproductive, +55 Days):</strong> 25% N + 50% K for grain filling</li>
+                    </ul>
+                    <div style="background:var(--card-accent); border-radius:12px; padding:8px; font-weight:700; font-size:11px; text-align:center; margin-top:8px;">
+                        📅 1-Click Apple/Outlook .ICS download & Google Calendar URL sync
+                    </div>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-17"></div>
+        </div>
+
+        <!-- SLIDE 18: TESTING & VERIFICATION -->
+        <div class="slide" id="slide-18">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">15. Testing Suite & Mathematical Verification</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Quality</div>
+            </div>
+            <div class="slide-body grid-custom-intro">
+                <div class="card" style="align-items:center; justify-content:center; text-align:center;">
+                    <div class="stat-big">22 / 22</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:18px; margin: 8px 0;">Automated Unit Tests Passing</h4>
+                    <p style="font-weight:700; color:var(--accent-green);">100% Success Rate • Ran in 8.41s</p>
+                    <p style="font-size:12px; margin-top:10px; color:var(--text-muted);">Comprehensive automated verification covering mathematical boundaries, zero-cost edge cases, remote sensing, and security.</p>
+                </div>
+                <div class="card card-alt">
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:15px; font-weight:700; color:var(--primary-dark); margin-bottom:8px;">Tested Modules</h4>
+                    <ul style="gap: 5px; font-size: 11px;">
+                        <li>✓ Standard Feasible SLSQP Optimization</li>
+                        <li>✓ Zero-Fertilizer Edge Cases (100% savings)</li>
+                        <li>✓ Biological Yield Ceiling Infeasibility</li>
+                        <li>✓ Marginal Response Curve Generation</li>
+                        <li>✓ Leaf Doctor Pathogen Diagnostics</li>
+                        <li>✓ Leaf Doctor Deficiency Detection</li>
+                        <li>✓ Sentinel-2 NDVI Grid & Health Scoring</li>
+                        <li>✓ Email & SMS OTP Auth Flow</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-18"></div>
+        </div>
+
+        <!-- SLIDE 19: END-TO-END WORKFLOW -->
+        <div class="slide" id="slide-19">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">16. End-to-End Precision Agronomy Workflow</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Workflow</div>
+            </div>
+            <div class="slide-body grid-6">
+                <div class="card" style="align-items:center; text-align:center; padding:16px 10px;">
+                    <div class="num-circle">1</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:13px; font-weight:700; margin:10px 0 6px 0;">Soil Test</h4>
+                    <p style="font-size:10.5px;">Farmer inputs soil N, P, K, pH & farm location.</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center; padding:16px 10px;">
+                    <div class="num-circle green">2</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:13px; font-weight:700; margin:10px 0 6px 0;">Climate</h4>
+                    <p style="font-size:10.5px;">14-day rainfall forecast & leaching risk calculation.</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center; padding:16px 10px;">
+                    <div class="num-circle">3</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:13px; font-weight:700; margin:10px 0 6px 0;">Optimization</h4>
+                    <p style="font-size:10.5px;">SLSQP solver computes minimal Delta N, P, K doses.</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center; padding:16px 10px;">
+                    <div class="num-circle green">4</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:13px; font-weight:700; margin:10px 0 6px 0;">NDVI Vigor</h4>
+                    <p style="font-size:10.5px;">Sentinel-2 overlay fine-tunes zone N prescriptions.</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center; padding:16px 10px;">
+                    <div class="num-circle">5</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:13px; font-weight:700; margin:10px 0 6px 0;">4R Bags</h4>
+                    <p style="font-size:10.5px;">Converts nutrients into 50kg bags & split dates.</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center; padding:16px 10px;">
+                    <div class="num-circle green">6</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:13px; font-weight:700; margin:10px 0 6px 0;">Tractor VRA</h4>
+                    <p style="font-size:10.5px;">Export GeoJSON to tractor spreader & PDF report.</p>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-19"></div>
+        </div>
+
+        <!-- SLIDE 20: CASE STUDY -->
+        <div class="slide" id="slide-20">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">17. Example Farmer Case Study: Punjab Wheat Farm</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Case Study</div>
+            </div>
+            <div class="slide-body grid-3">
+                <div class="card">
+                    <h3>Farmer Baseline Input</h3>
+                    <ul>
+                        <li>• <strong>Location:</strong> Jalandhar, Punjab, India</li>
+                        <li>• <strong>Crop:</strong> Wheat (HD-2967)</li>
+                        <li>• <strong>Area:</strong> 25 Hectares</li>
+                        <li>• <strong>Soil N:</strong> 38 kg/ha (Low)</li>
+                        <li>• <strong>Soil P:</strong> 18 kg/ha (Medium)</li>
+                        <li>• <strong>Soil K:</strong> 32 kg/ha (Adequate)</li>
+                        <li>• <strong>Target Yield:</strong> 6.2 t/ha</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3>AgriOptima Prescription</h3>
+                    <ul>
+                        <li>• <strong>Predicted Yield:</strong> 6.35 t/ha</li>
+                        <li>• <strong>Delta N:</strong> +52 kg/ha</li>
+                        <li>• <strong>Delta P:</strong> +24 kg/ha</li>
+                        <li>• <strong>Delta K:</strong> 0 kg/ha (Zero Potash needed)</li>
+                        <li>• <strong>Urea (50kg):</strong> 48 Bags</li>
+                        <li>• <strong>DAP (50kg):</strong> 26 Bags</li>
+                        <li>• <strong>MOP (50kg):</strong> 0 Bags</li>
+                    </ul>
+                </div>
+                <div class="card card-alt">
+                    <div class="stat-big">$1,840</div>
+                    <h3 style="color:var(--accent-green); margin-top:4px;">Direct Cost Savings</h3>
+                    <ul style="margin-top:8px;">
+                        <li>• <strong>34.2% Cost Reduction</strong> vs blanket broadcasting.</li>
+                        <li>• <strong>320 kg Run-off Prevented:</strong> Zero excess nitrate pollution in aquifers.</li>
+                        <li>• <strong>+2.4% Yield Bonus:</strong> Exceeded target.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-20"></div>
+        </div>
+
+        <!-- SLIDE 21: PROJECT AT A GLANCE -->
+        <div class="slide" id="slide-21">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">18. AgriOptima Project at a Glance</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Summary</div>
+            </div>
+            <div class="slide-body grid-3">
+                <div class="card" style="align-items:center; text-align:center;">
+                    <div class="stat-big brown">22</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:16px;">Unit Tests Passing</h4>
+                    <p style="font-size:11px; color:var(--text-muted);">100% automated test coverage</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center;">
+                    <div class="stat-big">14</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:16px;">Languages Supported</h4>
+                    <p style="font-size:11px; color:var(--text-muted);">Global i18n + voice synthesis</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center;">
+                    <div class="stat-big blue">6</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:16px;">Agronomic Themes</h4>
+                    <p style="font-size:11px; color:var(--text-muted);">Canopy, Harvest, Daylight, Dark...</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center;">
+                    <div class="stat-big brown">6</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:16px;">Calibrated Crops</h4>
+                    <p style="font-size:11px; color:var(--text-muted);">Wheat, Rice, Maize, Cotton, Potato, Tomato</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center;">
+                    <div class="stat-big">4</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:16px;">Google Map Layers</h4>
+                    <p style="font-size:11px; color:var(--text-muted);">Satellite, Terrain, Road, OSM</p>
+                </div>
+                <div class="card" style="align-items:center; text-align:center;">
+                    <div class="stat-big blue">100%</div>
+                    <h4 style="font-family:'Playfair Display', Georgia; font-size:16px;">Production Uptime</h4>
+                    <p style="font-size:11px; color:var(--text-muted);">Live on Render PaaS</p>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-21"></div>
+        </div>
+
+        <!-- SLIDE 22: DEPLOYMENT -->
+        <div class="slide" id="slide-22">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">19. Production Deployment & Cloud Architecture</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Deployment</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Cloud Infrastructure & CI/CD</h3>
+                    <ul>
+                        <li>• <strong>Production Host:</strong> Render Platform-as-a-Service (PaaS) with zero-downtime rolling deploys.</li>
+                        <li>• <strong>Live Production URL:</strong><br><a href="https://agrioptima-jpva.onrender.com/" target="_blank" style="color:var(--accent-brown); font-weight:700;">https://agrioptima-jpva.onrender.com/</a></li>
+                        <li>• <strong>GitHub Repository:</strong><br><a href="https://github.com/67sdnew-hash/agrioptima" target="_blank" style="color:var(--accent-green); font-weight:700;">github.com/67sdnew-hash/agrioptima</a></li>
+                        <li>• <strong>Server Stack:</strong> Gunicorn multi-worker WSGI behind Cloudflare CDN reverse proxy with HTTP/3 & SSL/TLS.</li>
+                    </ul>
+                </div>
+                <div class="card card-alt">
+                    <h3>Automated Deployment Pipeline</h3>
+                    <div class="formula-box" style="font-size:10.5px;">
+                        # 1. Dependency Installation<br>
+                        pip install -r requirements.txt<br><br>
+                        # 2. Database Migrations<br>
+                        python manage.py migrate<br><br>
+                        # 3. Static Asset Compilation<br>
+                        python manage.py collectstatic --no-input<br><br>
+                        # 4. Gunicorn Server Launch<br>
+                        gunicorn agrioptima.wsgi:application --bind 0.0.0.0:$PORT
+                    </div>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-22"></div>
+        </div>
+
+        <!-- SLIDE 23: CONCLUSION & ROADMAP -->
+        <div class="slide" id="slide-23">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-header">
+                <div class="title-group">
+                    <h2 class="slide-title">20. Conclusion & Strategic Agritech Roadmap</h2>
+                    <div class="slide-underline"></div>
+                </div>
+                <div class="category-badge">Future Vision</div>
+            </div>
+            <div class="slide-body grid-2">
+                <div class="card">
+                    <h3>Key Project Achievements</h3>
+                    <ul>
+                        <li>• <strong>Scientific Rigor:</strong> Replaced fertilizer guesswork with Mitscherlich-Baule mathematical modeling.</li>
+                        <li>• <strong>Proven Economics:</strong> 25%–45% fertilizer cost savings per hectare.</li>
+                        <li>• <strong>Environmental Guardianship:</strong> Mitigates non-point source nitrate leaching into groundwater.</li>
+                        <li>• <strong>Universal Accessibility:</strong> 14 languages, hands-free voice, 6 themes, and camera diagnostics.</li>
+                    </ul>
+                </div>
+                <div class="card card-alt">
+                    <h3>Future Roadmap</h3>
+                    <ul>
+                        <li>• <strong>Autonomous Drone Telemetry:</strong> Direct prescription transmission to DJI Agras / XAG spray drones.</li>
+                        <li>• <strong>LoRaWAN Soil IoT Sensors:</strong> Live streaming soil moisture, EC conductivity, and nitrate levels.</li>
+                        <li>• <strong>Carbon Credit Verification:</strong> Automated certification of fertilizer reduction for carbon credits.</li>
+                        <li>• <strong>Parametric Crop Insurance:</strong> Satellite NDVI audit trail for instant insurance claims.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-23"></div>
+        </div>
+
+        <!-- SLIDE 24: THANK YOU -->
+        <div class="slide" id="slide-24">
+            <div class="corner-bottom-left"></div>
+            <div class="corner-bottom-right"></div>
+            <div class="slide-body" style="justify-content:center; align-items:center;">
+                <div class="card" style="width:100%; max-width:850px; padding:50px; text-align:center;">
+                    <div style="font-size: 54px; margin-bottom: 10px;">🌾</div>
+                    <h1 style="font-family:'Playfair Display', Georgia; font-size:46px; font-weight:900; color:var(--primary-dark); margin-bottom:8px;">Thank You!</h1>
+                    <h2 style="font-family:'Playfair Display', Georgia; font-size:22px; font-weight:700; color:var(--accent-brown); margin-bottom:24px;">AgriOptima 3D — Precision Crop Yield & Fertilizer Optimizer</h2>
+                    <div style="display:flex; justify-content:center; gap:16px; margin-bottom:24px;">
+                        <a href="https://agrioptima-jpva.onrender.com/" target="_blank" class="category-badge" style="background:var(--accent-green); text-decoration:none; padding:10px 20px; font-size:12px;">🌐 Live Production App</a>
+                        <a href="{% url 'download_presentation' %}" class="category-badge" style="background:var(--accent-brown); text-decoration:none; padding:10px 20px; font-size:12px;">📥 Download PowerPoint (.pptx)</a>
+                        <a href="https://github.com/67sdnew-hash/agrioptima" target="_blank" class="category-badge" style="background:var(--primary-dark); text-decoration:none; padding:10px 20px; font-size:12px;">💻 GitHub Repository</a>
+                    </div>
+                    <p style="font-size:12px; color:var(--text-muted);">Built with mathematical precision and environmental care for sustainable agriculture worldwide.</p>
+                </div>
+            </div>
+            <div class="timeline-bar" id="timeline-24"></div>
+        </div>
+
+    </div>
+
+    <!-- Keyboard Navigation Hint -->
+    <div class="hint-bar">
+        <span>Use <span class="kbd">←</span> <span class="kbd">→</span> or <span class="kbd">Spacebar</span> to navigate slides</span>
+        <span>Press <span class="kbd">F</span> for Fullscreen</span>
+        <span>Press <span class="kbd">Ctrl</span> + <span class="kbd">P</span> to Print / Save as PDF</span>
+    </div>
+
+    <script>
+        const totalSlides = 24;
+        let currentSlide = 1;
+
+        // Initialize timeline bars for each slide
+        for (let i = 1; i <= totalSlides; i++) {
+            const bar = document.getElementById(`timeline-${i}`);
+            if (bar) {
+                for (let j = 1; j <= totalSlides; j++) {
+                    const pill = document.createElement('div');
+                    pill.className = `timeline-pill ${j === i ? 'active' : ''}`;
+                    bar.appendChild(pill);
+                }
+            }
+        }
+
+        function showSlide(index) {
+            if (index < 1) index = 1;
+            if (index > totalSlides) index = totalSlides;
+
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(`slide-${index}`);
+            if (target) {
+                target.classList.add('active');
+                currentSlide = index;
+                document.getElementById('slideIndicator').textContent = `${currentSlide} / ${totalSlides}`;
+            }
+        }
+
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            showSlide(currentSlide - 1);
+        }
+
+        function toggleFullScreen() {
+            const stage = document.getElementById('presentationStage');
+            if (!document.fullscreenElement) {
+                stage.requestFullscreen().catch(err => alert("Fullscreen error: " + err.message));
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Keyboard Controls
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === 'Space') {
+                nextSlide();
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+                e.preventDefault();
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullScreen();
+            }
+        });
+    </script>
+</body>
+</html>

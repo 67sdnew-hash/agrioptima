@@ -24,4 +24,6 @@ urlpatterns = [
     path('api/auth/verify-otp/', views.verify_registration_otp_api, name='verify_registration_otp_api'),
     path('api/diagnose-leaf/', views.leaf_doctor_api_view, name='leaf_doctor_api'),
     path('api/ndvi-satellite/', views.ndvi_satellite_api_view, name='ndvi_satellite_api'),
+    path('presentation/', views.presentation_view, name='presentation'),
+    path('presentation/download/', views.download_presentation_pptx, name='download_presentation'),
 ]

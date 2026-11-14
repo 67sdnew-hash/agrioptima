@@ -893,4 +893,21 @@ def ndvi_satellite_api_view(request):
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
+def presentation_view(request):
+    """Renders the interactive 24-slide presentation deck."""
+    return render(request, 'optimizer/presentation.html')
+
+
+def download_presentation_pptx(request):
+    """Serves the generated PowerPoint (.pptx) presentation for download."""
+    pptx_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'AgriOptima_Project_Presentation.pptx')
+    if os.path.exists(pptx_path):
+        with open(pptx_path, 'rb') as f:
+            response = HttpResponse(f.read(), content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
+            response['Content-Disposition'] = 'attachment; filename="AgriOptima_Project_Presentation.pptx"'
+            return response
+    return HttpResponse("Presentation file not found.", status=404)
+
+
+
 
