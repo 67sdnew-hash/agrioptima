@@ -69,3 +69,61 @@ class OptimizationRecord(models.Model):
 
     def __str__(self):
         return f"{self.crop_type} - Target: {self.target_yield} t/ha ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
+
+
+class CommunityPost(models.Model):
+    CATEGORY_CHOICES = [
+        ('all', 'General Agronomy'),
+        ('fertilizer', 'Fertilizer & Soil Recipe'),
+        ('alert', 'Pest & Leaching Alert'),
+        ('weather', 'Local Weather & Climate'),
+        ('equipment', 'Equipment & Machinery'),
+        ('market', 'Market Rates & Produce'),
+    ]
+
+    author_name = models.CharField(max_length=100, default="Anonymous Farmer")
+    author_location = models.CharField(max_length=150, default="Global Farm Network")
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+    crop_type = models.CharField(max_length=50, default="Wheat")
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='fertilizer')
+    title = models.CharField(max_length=255)
+    content = models.TextField()
+    soil_metrics_json = models.CharField(max_length=255, blank=True, null=True)
+    upvotes = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} by {self.author_name} ({self.author_location})"
+
+
+class CommunityReply(models.Model):
+    post = models.ForeignKey(CommunityPost, on_delete=models.CASCADE, related_name='replies')
+    author_name = models.CharField(max_length=100, default="Neighboring Farmer")
+    author_location = models.CharField(max_length=150, default="Local Belt")
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"Reply by {self.author_name} on {self.post.title}"
+
+
+class CommunityChatMessage(models.Model):
+    author_name = models.CharField(max_length=100, default="Farmer")
+    author_location = models.CharField(max_length=150, default="Local Field")
+    channel = models.CharField(max_length=50, default="nearby")
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"[{self.channel}] {self.author_name}: {self.message[:30]}"
+

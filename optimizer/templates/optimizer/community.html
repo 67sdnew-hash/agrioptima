@@ -1,0 +1,616 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Farmer Community & Nearby Peer Hub — AgriOptima 3D{% endblock %}
+
+{% block extra_scripts %}
+<!-- Leaflet Map CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    const MAP_PINS = {{ map_pins_json|safe }};
+    let communityMap = null;
+    let markersLayer = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initCommunityMap();
+        initChatPolling();
+        syncUserLocationToComposer();
+    });
+
+    function initCommunityMap() {
+        const container = document.getElementById('communityMap');
+        if (!container) return;
+
+        communityMap = L.map('communityMap', {
+            zoomControl: true,
+            scrollWheelZoom: false
+        }).setView([25.0, 15.0], 2);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(communityMap);
+
+        markersLayer = L.layerGroup().addTo(communityMap);
+
+        const bounds = [];
+        MAP_PINS.forEach(pin => {
+            if (pin.lat && pin.lon) {
+                const marker = L.circleMarker([pin.lat, pin.lon], {
+                    radius: 8,
+                    fillColor: pin.crop === 'Wheat' ? '#10b981' : (pin.crop === 'Rice' ? '#06b6d4' : (pin.crop === 'Maize' ? '#f59e0b' : '#8b5cf6')),
+                    color: '#ffffff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.9
+                });
+
+                const popupHtml = `
+                    <div class="text-xs p-1 space-y-1">
+                        <div class="font-bold text-slate-900">${pin.author}</div>
+                        <div class="text-slate-500 text-[10px]">📍 ${pin.location}</div>
+                        <div class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800">${pin.crop}</div>
+                        <div class="font-semibold text-slate-800 text-[11px] mt-1">${pin.title}</div>
+                        <div class="text-[10px] text-slate-400">${pin.replies_count} farmer replies</div>
+                    </div>
+                `;
+                marker.bindPopup(popupHtml);
+                markersLayer.addLayer(marker);
+                bounds.push([pin.lat, pin.lon]);
+            }
+        });
+
+        if (bounds.length > 0) {
+            communityMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 5 });
+        }
+    }
+
+    function toggleComposer() {
+        const composer = document.getElementById('postComposerCard');
+        if (composer) {
+            composer.classList.toggle('hidden');
+            if (!composer.classList.contains('hidden')) {
+                composer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    }
+
+    function syncUserLocationToComposer() {
+        try {
+            const saved = localStorage.getItem('agrioptima_saved_location');
+            if (saved) {
+                const locData = JSON.parse(saved);
+                const locInput = document.getElementById('composerLocation');
+                const latInput = document.getElementById('composerLat');
+                const lonInput = document.getElementById('composerLon');
+                if (locInput && !locInput.value) locInput.value = locData.label || '';
+                if (latInput && !latInput.value) latInput.value = locData.lat || '';
+                if (lonInput && !lonInput.value) lonInput.value = locData.lon || '';
+            }
+        } catch(e) {}
+    }
+
+    async function submitNewPost(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmitPost');
+        const errDiv = document.getElementById('composerError');
+        errDiv.classList.add('hidden');
+        btn.disabled = true;
+        btn.textContent = 'Posting to Community...';
+
+        const payload = {
+            author_name: document.getElementById('composerAuthor').value,
+            author_location: document.getElementById('composerLocation').value,
+            crop_type: document.getElementById('composerCrop').value,
+            category: document.getElementById('composerCategory').value,
+            title: document.getElementById('composerTitle').value,
+            content: document.getElementById('composerContent').value,
+            soil_metrics: document.getElementById('composerMetrics').value,
+            latitude: document.getElementById('composerLat').value,
+            longitude: document.getElementById('composerLon').value
+        };
+
+        try {
+            const res = await fetch('/api/community/posts/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // Reload page to display new post in order
+                window.location.reload();
+            } else {
+                errDiv.textContent = data.error || 'Failed to publish post.';
+                errDiv.classList.remove('hidden');
+                btn.disabled = false;
+                btn.textContent = 'Publish to Community';
+            }
+        } catch(err) {
+            errDiv.textContent = 'Network error publishing post: ' + err.message;
+            errDiv.classList.remove('hidden');
+            btn.disabled = false;
+            btn.textContent = 'Publish to Community';
+        }
+    }
+
+    async function upvotePost(postId, btnElement) {
+        try {
+            const res = await fetch(`/api/community/posts/${postId}/upvote/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                const countElem = btnElement.querySelector('.upvote-count');
+                if (countElem) countElem.textContent = data.upvotes;
+                btnElement.classList.add('text-emerald-600', 'bg-emerald-50', 'dark:bg-emerald-950/60');
+                btnElement.disabled = true;
+            }
+        } catch(e) {
+            console.error('Error upvoting post:', e);
+        }
+    }
+
+    function toggleReplies(postId) {
+        const box = document.getElementById(`repliesBox-${postId}`);
+        if (box) box.classList.toggle('hidden');
+    }
+
+    async function submitReply(e, postId) {
+        e.preventDefault();
+        const input = document.getElementById(`replyInput-${postId}`);
+        const authorInput = document.getElementById(`replyAuthor-${postId}`);
+        const locInput = document.getElementById(`replyLocation-${postId}`);
+        const list = document.getElementById(`repliesList-${postId}`);
+        const countBadge = document.getElementById(`replyCountBadge-${postId}`);
+
+        const text = input.value.trim();
+        if (!text) return;
+
+        const author = authorInput ? authorInput.value.trim() : 'Neighboring Farmer';
+        const loc = locInput ? locInput.value.trim() : 'Local Belt';
+
+        try {
+            const res = await fetch(`/api/community/posts/${postId}/reply/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ author_name: author, author_location: loc, content: text })
+            });
+            const data = await res.json();
+            if (data.success) {
+                input.value = '';
+                const newReplyHtml = `
+                    <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800 dark:text-slate-200">${data.reply.author} <span class="text-[10px] font-normal text-slate-400">• ${data.reply.location}</span></span>
+                            <span class="text-[10px] text-slate-400">${data.reply.created_at}</span>
+                        </div>
+                        <p class="text-slate-600 dark:text-slate-300">${data.reply.content}</p>
+                    </div>
+                `;
+                list.insertAdjacentHTML('beforeend', newReplyHtml);
+                if (countBadge) {
+                    const currentCount = parseInt(countBadge.textContent) || 0;
+                    countBadge.textContent = `${currentCount + 1} Replies`;
+                }
+            }
+        } catch(e) {
+            console.error('Error submitting reply:', e);
+        }
+    }
+
+    // Live Farmer Radio Chat Engine
+    let currentChatChannel = 'nearby';
+
+    function setChatChannel(chan) {
+        currentChatChannel = chan;
+        document.querySelectorAll('.chat-tab-btn').forEach(btn => {
+            btn.classList.remove('bg-emerald-600', 'text-white', 'shadow-sm');
+            btn.classList.add('text-slate-600', 'dark:text-slate-400');
+        });
+        const activeBtn = document.getElementById(`chatTab-${chan}`);
+        if (activeBtn) {
+            activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
+            activeBtn.classList.add('bg-emerald-600', 'text-white', 'shadow-sm');
+        }
+        fetchChatMessages();
+    }
+
+    async function fetchChatMessages() {
+        try {
+            const res = await fetch(`/api/community/chat/?channel=${currentChatChannel}`);
+            const data = await res.json();
+            if (data.success && data.messages) {
+                renderChatMessages(data.messages);
+            }
+        } catch(e) {}
+    }
+
+    function renderChatMessages(messages) {
+        const stream = document.getElementById('chatMessagesStream');
+        if (!stream) return;
+
+        const isScrolledToBottom = stream.scrollHeight - stream.clientHeight <= stream.scrollTop + 30;
+
+        stream.innerHTML = messages.map(m => `
+            <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 text-xs space-y-0.5">
+                <div class="flex items-center justify-between text-[10px]">
+                    <span class="font-bold text-emerald-700 dark:text-emerald-400">${m.author} <span class="font-normal text-slate-400">• ${m.location}</span></span>
+                    <span class="text-slate-400">${m.time}</span>
+                </div>
+                <p class="text-slate-700 dark:text-slate-200 text-[11px] leading-relaxed">${m.text}</p>
+            </div>
+        `).join('');
+
+        if (isScrolledToBottom) {
+            stream.scrollTop = stream.scrollHeight;
+        }
+    }
+
+    async function sendLiveChatMessage(e) {
+        e.preventDefault();
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const author = document.getElementById('chatAuthorName')?.value || 'Neighboring Farmer';
+        const loc = document.getElementById('chatAuthorLoc')?.value || 'Local Field';
+
+        input.value = '';
+        try {
+            const res = await fetch('/api/community/chat/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    author_name: author,
+                    author_location: loc,
+                    channel: currentChatChannel,
+                    message: text
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                fetchChatMessages();
+            }
+        } catch(e) {
+            console.error('Error sending chat message:', e);
+        }
+    }
+
+    function initChatPolling() {
+        fetchChatMessages();
+        setInterval(fetchChatMessages, 8000);
+    }
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Hero Header Banner with Peer Network Indicators -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 sm:p-8 rounded-3xl glass-card relative overflow-hidden" data-tilt>
+        <div class="relative z-10 max-w-2xl space-y-2">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/70 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span>Real-Time Local & Global Agronomy Exchange</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
+                <span>Farmer Community & Nearby Peer Hub</span>
+                <span class="text-xl">🌾</span>
+            </h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                Connect directly with farmers in your agro-climatic belt. Share live soil test observations, split-fertilizer experiences, weather warnings, and local market prices.
+            </p>
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
+                    <span>👨‍🌾</span>
+                    <span>{{ total_farmers }} Active Farmers in Network</span>
+                </span>
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                    <span>📍</span>
+                    <span>Nearby Radius: Auto-Detected by GPS/Belt</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
+            <button type="button" onclick="toggleComposer()" class="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/25 transition-all flex items-center justify-center space-x-2 transform hover:scale-102">
+                <span>✍️ Ask Nearby Farmers / Share Advice</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Collapsible New Post Composer -->
+    <div id="postComposerCard" class="hidden p-6 sm:p-7 glass-card rounded-3xl border border-emerald-300/80 dark:border-emerald-800/80 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center space-x-2">
+                <span class="text-lg">🌾</span>
+                <h2 class="text-base font-bold text-slate-900 dark:text-white">Publish New Farmer Community Discussion</h2>
+            </div>
+            <button type="button" onclick="toggleComposer()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold">✕ Close</button>
+        </div>
+
+        <div id="composerError" class="hidden p-3 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 text-xs font-semibold"></div>
+
+        <form onsubmit="submitNewPost(event)" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Your Name / Farm Handle</label>
+                    <input type="text" id="composerAuthor" required placeholder="e.g. Gurpreet Singh • Field 2" class="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Farm Location / Region</label>
+                    <input type="text" id="composerLocation" required placeholder="e.g. Ludhiana, Punjab, India" class="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Primary Crop</label>
+                    <select id="composerCrop" class="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <option value="Wheat">Wheat (Triticum aestivum)</option>
+                        <option value="Rice">Rice (Oryza sativa)</option>
+                        <option value="Maize">Maize (Zea mays)</option>
+                        <option value="Cotton">Cotton (Gossypium hirsutum)</option>
+                        <option value="Soybean">Soybean (Glycine max)</option>
+                        <option value="Other">Other Crop</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Category / Topic</label>
+                    <select id="composerCategory" class="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <option value="fertilizer">🧪 Fertilizer & Soil Recipe</option>
+                        <option value="alert">⚠️ Pest & Leaching Warning</option>
+                        <option value="weather">🌦️ Local Weather & Canal Supply</option>
+                        <option value="equipment">🚜 Equipment & Tractor VRA</option>
+                        <option value="market">💰 Local Cooperative & Market Rates</option>
+                        <option value="all">🌾 General Agronomy</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Soil / Field Metrics (Optional)</label>
+                    <input type="text" id="composerMetrics" placeholder="e.g. N: 45, P: 22, K: 35 kg/ha | pH: 6.8" class="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+            </div>
+
+            <input type="hidden" id="composerLat" value="">
+            <input type="hidden" id="composerLon" value="">
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Discussion Subject / Question Title</label>
+                <input type="text" id="composerTitle" required placeholder="e.g. Anyone noticed yellowing on wheat tillers after the recent 35mm downpour?" class="w-full px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Details & Observations</label>
+                <textarea id="composerContent" rows="4" required placeholder="Describe what you are seeing in your field, fertilizer dosages applied, soil moisture conditions, or specific advice needed from nearby growers..." class="w-full p-3.5 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end space-x-3 pt-2">
+                <button type="button" onclick="toggleComposer()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancel</button>
+                <button type="submit" id="btnSubmitPost" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition">Publish to Community 🌾</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Main Layout: 2 Columns (Discussions + Live Farmer Radio Chat) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Left Column: Discussions & Farmer Map (8 Cols) -->
+        <div class="lg:col-span-8 space-y-6">
+
+            <!-- Interactive Nearby Farmers Map -->
+            <div class="p-5 glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-base">🗺️</span>
+                        <h2 class="text-sm font-bold text-slate-900 dark:text-white">Active Nearby Farmer Pins & Reports</h2>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-400">Click a pin to view farmer notes</span>
+                </div>
+                <div id="communityMap" class="w-full h-56 rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800/80 z-0"></div>
+            </div>
+
+            <!-- Filter Categories & Search Bar -->
+            <div class="p-4 glass-card rounded-2xl border border-slate-200/80 dark:border-slate-800/80 space-y-3">
+                <div class="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+                    <a href="?category=all" class="px-3 py-1.5 rounded-xl transition {% if selected_category == 'all' %}bg-emerald-600 text-white font-bold shadow-sm{% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200{% endif %}">
+                        🌾 All Topics
+                    </a>
+                    <a href="?category=fertilizer" class="px-3 py-1.5 rounded-xl transition {% if selected_category == 'fertilizer' %}bg-emerald-600 text-white font-bold shadow-sm{% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200{% endif %}">
+                        🧪 Fertilizer & Soil
+                    </a>
+                    <a href="?category=alert" class="px-3 py-1.5 rounded-xl transition {% if selected_category == 'alert' %}bg-emerald-600 text-white font-bold shadow-sm{% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200{% endif %}">
+                        ⚠️ Pest & Leaching
+                    </a>
+                    <a href="?category=weather" class="px-3 py-1.5 rounded-xl transition {% if selected_category == 'weather' %}bg-emerald-600 text-white font-bold shadow-sm{% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200{% endif %}">
+                        🌦️ Weather
+                    </a>
+                    <a href="?category=equipment" class="px-3 py-1.5 rounded-xl transition {% if selected_category == 'equipment' %}bg-emerald-600 text-white font-bold shadow-sm{% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200{% endif %}">
+                        🚜 Equipment
+                    </a>
+                    <a href="?category=market" class="px-3 py-1.5 rounded-xl transition {% if selected_category == 'market' %}bg-emerald-600 text-white font-bold shadow-sm{% else %}bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200{% endif %}">
+                        💰 Market Rates
+                    </a>
+                </div>
+
+                <!-- Keyword Search -->
+                <form method="GET" class="relative flex items-center">
+                    <span class="absolute left-3.5 text-slate-400 text-sm">🔍</span>
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Filter discussions by topic, farmer name, crop, or region..." class="w-full pl-10 pr-20 py-2 rounded-xl text-xs bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button type="submit" class="absolute right-2 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition">Search</button>
+                </form>
+            </div>
+
+            <!-- Discussion Thread Posts -->
+            <div class="space-y-4">
+                {% if posts %}
+                    {% for post in posts %}
+                    <div class="p-6 glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-3 transition-all hover:border-emerald-300 dark:hover:border-emerald-700/60">
+                        <!-- Post Meta Header -->
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-sm flex items-center justify-center shadow-sm">
+                                    {{ post.author_name|slice:":1" }}
+                                </div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h3 class="text-xs font-bold text-slate-900 dark:text-white">{{ post.author_name }}</h3>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                                            {{ post.crop_type }}
+                                        </span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                        <span>📍 {{ post.author_location }}</span>
+                                        <span>•</span>
+                                        <span>{{ post.created_at|date:"M d, Y • H:i" }}</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <span class="px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                {{ post.get_category_display }}
+                            </span>
+                        </div>
+
+                        <!-- Post Title & Content -->
+                        <div class="space-y-1.5 pt-1">
+                            <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100">{{ post.title }}</h4>
+                            <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">{{ post.content }}</p>
+                        </div>
+
+                        <!-- Attached Soil Metrics Badge -->
+                        {% if post.soil_metrics_json %}
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-teal-50/70 dark:bg-teal-950/40 border border-teal-200/60 dark:border-teal-800/60 text-[11px] font-semibold text-teal-800 dark:text-teal-300">
+                            <span>🧪 Field Metrics:</span>
+                            <span>{{ post.soil_metrics_json }}</span>
+                        </div>
+                        {% endif %}
+
+                        <!-- Action Bar: Upvote & Reply Toggle -->
+                        <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+                            <div class="flex items-center space-x-2">
+                                <button type="button" onclick="upvotePost({{ post.id }}, this)" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-emerald-500 hover:text-emerald-600 transition flex items-center space-x-1.5">
+                                    <span>🌾 Helpful</span>
+                                    <span class="upvote-count font-bold">{{ post.upvotes }}</span>
+                                </button>
+                                <button type="button" onclick="toggleReplies({{ post.id }})" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-teal-500 hover:text-teal-600 transition flex items-center space-x-1.5">
+                                    <span>💬</span>
+                                    <span id="replyCountBadge-{{ post.id }}">{{ post.replies.count }} Replies</span>
+                                </button>
+                            </div>
+                            <button type="button" onclick="toggleReplies({{ post.id }})" class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                                Join Discussion →
+                            </button>
+                        </div>
+
+                        <!-- Accordion Replies Container -->
+                        <div id="repliesBox-{{ post.id }}" class="hidden pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-3">
+                            <div id="repliesList-{{ post.id }}" class="space-y-2">
+                                {% for reply in post.replies.all %}
+                                <div class="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs space-y-1">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-bold text-slate-800 dark:text-slate-200">
+                                            {{ reply.author_name }}
+                                            <span class="text-[10px] font-normal text-slate-400">• {{ reply.author_location }}</span>
+                                        </span>
+                                        <span class="text-[10px] text-slate-400">{{ reply.created_at|date:"M d, H:i" }}</span>
+                                    </div>
+                                    <p class="text-slate-600 dark:text-slate-300 leading-relaxed">{{ reply.content }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Inline Reply Form -->
+                            <form onsubmit="submitReply(event, {{ post.id }})" class="pt-2 space-y-2">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" id="replyAuthor-{{ post.id }}" placeholder="Your Name" value="Neighboring Farmer" class="px-3 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none">
+                                    <input type="text" id="replyLocation-{{ post.id }}" placeholder="Your Region" value="Local Belt" class="px-3 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none">
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input type="text" id="replyInput-{{ post.id }}" required placeholder="Write your agronomic recommendation or reply..." class="flex-1 px-3.5 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition">Reply</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="p-12 text-center glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-3">
+                        <span class="text-4xl">🌾</span>
+                        <h3 class="text-base font-bold text-slate-800 dark:text-slate-200">No discussions found</h3>
+                        <p class="text-xs text-slate-500 max-w-sm mx-auto">Be the first farmer in your area to ask a fertilizer question or post a weather alert!</p>
+                        <button type="button" onclick="toggleComposer()" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs">Start a Conversation</button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Live Farmer Radio Chat & Agro-Climatic Intelligence (4 Cols) -->
+        <div class="lg:col-span-4 space-y-6">
+
+            <!-- Live Farmer Radio / Instant Chat Card -->
+            <div class="glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 overflow-hidden flex flex-col h-[580px]">
+                <!-- Header -->
+                <div class="p-4 bg-slate-50/80 dark:bg-slate-900/80 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <h2 class="text-sm font-bold text-slate-900 dark:text-white">Live Farmer Radio 📻</h2>
+                    </div>
+                    <span class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">LIVE</span>
+                </div>
+
+                <!-- Channel Tabs -->
+                <div class="flex items-center p-2 bg-slate-100/60 dark:bg-slate-800/60 border-b border-slate-100 dark:border-slate-800 text-[11px] font-bold">
+                    <button type="button" id="chatTab-nearby" onclick="setChatChannel('nearby')" class="chat-tab-btn flex-1 py-1.5 rounded-lg text-center bg-emerald-600 text-white shadow-sm transition">📍 Nearby</button>
+                    <button type="button" id="chatTab-global" onclick="setChatChannel('global')" class="chat-tab-btn flex-1 py-1.5 rounded-lg text-center text-slate-600 dark:text-slate-400 transition">🌍 Global</button>
+                    <button type="button" id="chatTab-alerts" onclick="setChatChannel('alerts')" class="chat-tab-btn flex-1 py-1.5 rounded-lg text-center text-slate-600 dark:text-slate-400 transition">⚠️ Alerts</button>
+                </div>
+
+                <!-- Messages Stream -->
+                <div id="chatMessagesStream" class="flex-1 p-4 overflow-y-auto space-y-2.5">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <!-- Input Footer -->
+                <div class="p-3 bg-slate-50/90 dark:bg-slate-900/90 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                    <div class="grid grid-cols-2 gap-1.5 text-[10px]">
+                        <input type="text" id="chatAuthorName" placeholder="Farmer Name" value="Neighboring Farmer" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none">
+                        <input type="text" id="chatAuthorLoc" placeholder="Location" value="Local Field" class="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none">
+                    </div>
+                    <form onsubmit="sendLiveChatMessage(event)" class="flex items-center space-x-2">
+                        <input type="text" id="chatInput" required placeholder="Type quick field update..." class="flex-1 px-3 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500">
+                        <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">Send</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Agro-Climatic Belt Guidelines Card -->
+            <div class="p-6 glass-card rounded-3xl border border-slate-200/80 dark:border-slate-800/80 space-y-3">
+                <div class="flex items-center space-x-2">
+                    <span class="text-base">🌱</span>
+                    <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Community Principles</h3>
+                </div>
+                <ul class="text-xs text-slate-500 dark:text-slate-400 space-y-2">
+                    <li class="flex items-start gap-2">
+                        <span class="text-emerald-500 font-bold">✓</span>
+                        <span><strong>Cite Soil Sampling Depth:</strong> When asking about N-P-K, mention if your test was 0-15cm topsoil or 15-30cm subsoil.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-emerald-500 font-bold">✓</span>
+                        <span><strong>Share Fertilizer Stock & Prices:</strong> Help neighbors find fair cooperative DAP & MOP bag prices.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-emerald-500 font-bold">✓</span>
+                        <span><strong>Weather Early Warnings:</strong> If unexpected rain arrives before irrigation, broadcast an alert on Live Radio.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

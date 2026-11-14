@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import OptimizationRecord
+from .models import OptimizationRecord, CommunityPost, CommunityReply, CommunityChatMessage
 from .forms import SoilOptimizationForm
 from .services.optimization import optimize_fertilizer, generate_response_curves
 from .services.pdf_generator import generate_agronomist_pdf, calculate_commercial_bags
@@ -442,3 +442,217 @@ def research_view(request):
         'metrics': metrics_data,
     }
     return render(request, 'optimizer/research.html', context)
+
+
+def community_hub_view(request):
+    """Virtual Farmer Community: Localized & Global discussions, farmer map, and live radio chat."""
+    from .services.community_seed import seed_community_if_empty
+    seed_community_if_empty()
+
+    category = request.GET.get('category', 'all')
+    crop = request.GET.get('crop', '').strip()
+    search = request.GET.get('q', '').strip()
+
+    posts_qs = CommunityPost.objects.all().prefetch_related('replies')
+
+    if category and category != 'all':
+        posts_qs = posts_qs.filter(category=category)
+
+    if crop:
+        posts_qs = posts_qs.filter(crop_type__iexact=crop)
+
+    if search:
+        posts_qs = posts_qs.filter(title__icontains=search) | posts_qs.filter(content__icontains=search) | posts_qs.filter(author_location__icontains=search)
+
+    posts = list(posts_qs[:50])
+    recent_chats = list(CommunityChatMessage.objects.order_by('-created_at')[:30])
+    recent_chats.reverse()
+
+    # Prepare map pins for active farmers/posts
+    map_pins = []
+    for p in posts:
+        if p.latitude and p.longitude:
+            map_pins.append({
+                'id': p.id,
+                'author': p.author_name,
+                'location': p.author_location,
+                'crop': p.crop_type,
+                'category': p.get_category_display(),
+                'title': p.title,
+                'lat': p.latitude,
+                'lon': p.longitude,
+                'replies_count': p.replies.count()
+            })
+
+    context = {
+        'posts': posts,
+        'recent_chats': recent_chats,
+        'selected_category': category,
+        'selected_crop': crop,
+        'search_query': search,
+        'map_pins_json': json.dumps(map_pins),
+        'total_farmers': CommunityPost.objects.values('author_name').distinct().count() + 42,
+        'categories': CommunityPost.CATEGORY_CHOICES,
+    }
+    return render(request, 'optimizer/community.html', context)
+
+
+@csrf_exempt
+@require_POST
+def community_create_post_api(request):
+    """API endpoint to create a new discussion post in the Farmer Community."""
+    try:
+        data = json.loads(request.body.decode('utf-8'))
+        author_name = data.get('author_name', '').strip() or "Neighboring Farmer"
+        author_location = data.get('author_location', '').strip() or "Local Agro Belt"
+        crop_type = data.get('crop_type', 'Wheat').strip()
+        category = data.get('category', 'fertilizer').strip()
+        title = data.get('title', '').strip()
+        content = data.get('content', '').strip()
+        soil_metrics_json = data.get('soil_metrics', '').strip()
+
+        lat = data.get('latitude')
+        lon = data.get('longitude')
+        try:
+            lat = float(lat) if lat is not None and lat != '' else None
+            lon = float(lon) if lon is not None and lon != '' else None
+        except ValueError:
+            lat, lon = None, None
+
+        if not title or not content:
+            return JsonResponse({'error': 'Title and content cannot be empty.'}, status=400)
+
+        post = CommunityPost.objects.create(
+            author_name=author_name,
+            author_location=author_location,
+            latitude=lat,
+            longitude=lon,
+            crop_type=crop_type,
+            category=category,
+            title=title,
+            content=content,
+            soil_metrics_json=soil_metrics_json,
+            upvotes=1
+        )
+
+        return JsonResponse({
+            'success': True,
+            'post': {
+                'id': post.id,
+                'author': post.author_name,
+                'location': post.author_location,
+                'crop': post.crop_type,
+                'category': post.category,
+                'title': post.title,
+                'content': post.content,
+                'soil_metrics': post.soil_metrics_json,
+                'created_at': post.created_at.strftime('%b %d, %Y • %H:%M')
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_POST
+def community_reply_api(request, post_id: int):
+    """API endpoint to add a reply to an existing discussion thread."""
+    try:
+        post = get_object_or_404(CommunityPost, id=post_id)
+        data = json.loads(request.body.decode('utf-8'))
+        author_name = data.get('author_name', '').strip() or "Neighboring Farmer"
+        author_location = data.get('author_location', '').strip() or "Local Agricultural Area"
+        content = data.get('content', '').strip()
+
+        if not content:
+            return JsonResponse({'error': 'Reply content cannot be empty.'}, status=400)
+
+        reply = CommunityReply.objects.create(
+            post=post,
+            author_name=author_name,
+            author_location=author_location,
+            content=content
+        )
+
+        return JsonResponse({
+            'success': True,
+            'reply': {
+                'id': reply.id,
+                'author': reply.author_name,
+                'location': reply.author_location,
+                'content': reply.content,
+                'created_at': reply.created_at.strftime('%b %d, %Y • %H:%M')
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@require_POST
+def community_upvote_api(request, post_id: int):
+    """API endpoint to upvote / endorse a helpful agronomic post."""
+    try:
+        post = get_object_or_404(CommunityPost, id=post_id)
+        post.upvotes += 1
+        post.save(update_fields=['upvotes'])
+        return JsonResponse({'success': True, 'upvotes': post.upvotes})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def community_chat_api(request):
+    """API endpoint for the real-time Live Farmer Radio chat channel."""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            author_name = data.get('author_name', '').strip() or "Farmer"
+            author_location = data.get('author_location', '').strip() or "Local Field"
+            channel = data.get('channel', 'nearby').strip()
+            message = data.get('message', '').strip()
+
+            if not message:
+                return JsonResponse({'error': 'Message cannot be empty.'}, status=400)
+
+            msg = CommunityChatMessage.objects.create(
+                author_name=author_name,
+                author_location=author_location,
+                channel=channel,
+                message=message
+            )
+
+            return JsonResponse({
+                'success': True,
+                'message': {
+                    'id': msg.id,
+                    'author': msg.author_name,
+                    'location': msg.author_location,
+                    'channel': msg.channel,
+                    'text': msg.message,
+                    'time': msg.created_at.strftime('%H:%M')
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    else:
+        channel = request.GET.get('channel', '')
+        qs = CommunityChatMessage.objects.all()
+        if channel and channel != 'all':
+            qs = qs.filter(channel=channel)
+
+        msgs = list(qs.order_by('-created_at')[:40])
+        msgs.reverse()
+
+        data = [{
+            'id': m.id,
+            'author': m.author_name,
+            'location': m.author_location,
+            'channel': m.channel,
+            'text': m.message,
+            'time': m.created_at.strftime('%H:%M')
+        } for m in msgs]
+
+        return JsonResponse({'success': True, 'messages': data})
+

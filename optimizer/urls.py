@@ -4,6 +4,11 @@ from . import views
 urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
     path('zones/', views.multi_zone_view, name='multi_zone'),
+    path('community/', views.community_hub_view, name='community_hub'),
+    path('api/community/posts/', views.community_create_post_api, name='community_create_post_api'),
+    path('api/community/posts/<int:post_id>/reply/', views.community_reply_api, name='community_reply_api'),
+    path('api/community/posts/<int:post_id>/upvote/', views.community_upvote_api, name='community_upvote_api'),
+    path('api/community/chat/', views.community_chat_api, name='community_chat_api'),
     path('report/<int:record_id>/pdf/', views.export_pdf_report_view, name='export_pdf_report'),
     path('calendar/<int:record_id>/ics/', views.export_ics_calendar_view, name='export_ics_calendar'),
     path('api/agronomist-chat/', views.agronomist_chat_api_view, name='agronomist_chat_api'),

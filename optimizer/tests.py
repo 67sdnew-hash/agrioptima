@@ -320,3 +320,92 @@ class FertilizerOptimizationTests(TestCase):
         self.assertIn('response', data['data'])
         self.assertIn('Potassium', data['data']['response'])
         self.assertGreaterEqual(len(data['data']['suggestions']), 1)
+
+
+class CommunityFeatureTests(TestCase):
+    def test_community_hub_view_and_seed(self):
+        response = self.client.get(reverse('community_hub'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Farmer Community")
+        self.assertContains(response, "Live Farmer Radio")
+        # Check that seed data was populated
+        from optimizer.models import CommunityPost, CommunityChatMessage
+        self.assertGreater(CommunityPost.objects.count(), 0)
+        self.assertGreater(CommunityChatMessage.objects.count(), 0)
+
+    def test_community_create_post_api(self):
+        payload = {
+            'author_name': 'Amandeep Singh',
+            'author_location': 'Bathinda, Punjab',
+            'crop_type': 'Cotton',
+            'category': 'fertilizer',
+            'title': 'Pink bollworm defense and potash split timing',
+            'content': 'Has anyone experienced better boll retention with split potash applications?',
+            'soil_metrics': 'N: 50, P: 18, K: 32 kg/ha',
+            'latitude': 30.2110,
+            'longitude': 74.9455
+        }
+        response = self.client.post(
+            reverse('community_create_post_api'),
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['post']['author'], 'Amandeep Singh')
+        self.assertEqual(data['post']['crop'], 'Cotton')
+
+    def test_community_reply_and_upvote_api(self):
+        from optimizer.models import CommunityPost
+        post = CommunityPost.objects.create(
+            author_name='Test Farmer',
+            author_location='Test Valley',
+            crop_type='Wheat',
+            title='Test Question',
+            content='Test body content'
+        )
+
+        # Test Reply
+        reply_payload = {
+            'author_name': 'Reply Farmer',
+            'author_location': 'Neighbor Field',
+            'content': 'I suggest applying 30 kg/ha K2O at squaring.'
+        }
+        rep_resp = self.client.post(
+            reverse('community_reply_api', kwargs={'post_id': post.id}),
+            data=json.dumps(reply_payload),
+            content_type='application/json'
+        )
+        self.assertEqual(rep_resp.status_code, 200)
+        self.assertTrue(rep_resp.json()['success'])
+        self.assertEqual(post.replies.count(), 1)
+
+        # Test Upvote
+        up_resp = self.client.post(reverse('community_upvote_api', kwargs={'post_id': post.id}))
+        self.assertEqual(up_resp.status_code, 200)
+        self.assertEqual(up_resp.json()['upvotes'], 1)
+
+    def test_community_chat_api(self):
+        # Test POST
+        msg_payload = {
+            'author_name': 'Chatty Grower',
+            'author_location': 'Central Belt',
+            'channel': 'nearby',
+            'message': 'Canal water release scheduled for tomorrow 6 AM.'
+        }
+        post_resp = self.client.post(
+            reverse('community_chat_api'),
+            data=json.dumps(msg_payload),
+            content_type='application/json'
+        )
+        self.assertEqual(post_resp.status_code, 200)
+        self.assertTrue(post_resp.json()['success'])
+
+        # Test GET
+        get_resp = self.client.get(reverse('community_chat_api') + '?channel=nearby')
+        self.assertEqual(get_resp.status_code, 200)
+        data = get_resp.json()
+        self.assertTrue(data['success'])
+        self.assertGreaterEqual(len(data['messages']), 1)
+
