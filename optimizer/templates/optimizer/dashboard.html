@@ -305,6 +305,86 @@
                 </div>
             </div>
 
+            <!-- 4R Fertilizer Split-Application Schedule Card -->
+            {% if split_schedule %}
+            <div class="p-6 glass-card rounded-3xl space-y-4" data-tilt id="splitScheduleCard">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-base">
+                            📅
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900 dark:text-white">4R Nutrient Stewardship Split-Application Schedule</h3>
+                            <p class="text-xs text-slate-400">Scientifically staged application preventing nitrogen leaching and volatilization.</p>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Download Actions -->
+                    <div class="flex items-center space-x-2">
+                        <a id="downloadIcsBtn" href="{% url 'export_ics_calendar' latest_result.id %}?sowing_date={{ today_iso }}" class="px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition flex items-center space-x-1.5">
+                            <span>Apple / Outlook (.ICS)</span>
+                            <span>↓</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Sowing Date Controller -->
+                <div class="p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-slate-700 dark:text-slate-300">Sowing / Planting Date:</span>
+                        <input type="date" id="sowingDatePicker" value="{{ today_iso }}" onchange="onSowingDateChange(this.value)" class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs font-semibold focus:ring-1 focus:ring-emerald-500">
+                    </div>
+                    <span class="text-[11px] text-slate-400">Stages auto-adjust relative to germination window</span>
+                </div>
+
+                <!-- 3 Growth Stage Timeline Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                    {% for stage in split_schedule %}
+                    <div class="p-4 rounded-2xl bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-3 relative overflow-hidden">
+                        <div class="space-y-1">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full {% if stage.stage_number == 1 %}bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300{% elif stage.stage_number == 2 %}bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300{% else %}bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300{% endif %}">
+                                    Stage {{ stage.stage_number }} (Day +{{ stage.day_offset }})
+                                </span>
+                                <a href="{{ stage.google_cal_url }}" target="_blank" title="Add to Google Calendar" class="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline font-semibold flex items-center space-x-1">
+                                    <span>GCal</span>
+                                    <span>↗</span>
+                                </a>
+                            </div>
+                            <h4 class="text-xs font-extrabold text-slate-900 dark:text-white pt-1">{{ stage.growth_phase }}</h4>
+                            <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold scheduled-date-label">{{ stage.scheduled_date }}</p>
+                        </div>
+
+                        <!-- Dosages for Stage -->
+                        <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-xs space-y-1">
+                            <span class="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">Required Dosing:</span>
+                            {% if stage.dap_bags > 0 %}
+                            <div class="flex justify-between font-bold text-amber-600 dark:text-amber-400">
+                                <span>DAP (18-46-0):</span>
+                                <span>{{ stage.dap_bags }} bags</span>
+                            </div>
+                            {% endif %}
+                            {% if stage.mop_bags > 0 %}
+                            <div class="flex justify-between font-bold text-emerald-600 dark:text-emerald-400">
+                                <span>MOP (0-0-60):</span>
+                                <span>{{ stage.mop_bags }} bags</span>
+                            </div>
+                            {% endif %}
+                            {% if stage.urea_bags > 0 %}
+                            <div class="flex justify-between font-bold text-indigo-600 dark:text-indigo-400">
+                                <span>Urea (46-0-0):</span>
+                                <span>{{ stage.urea_bags }} bags</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <p class="text-[10px] text-slate-400 leading-tight">{{ stage.application_method }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Chart.js Response Curves with Multi-Nutrient Switcher -->
             <div class="p-6 glass-card rounded-3xl" data-tilt>
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -349,6 +429,99 @@
                 <div id="soil3DCanvasContainer"></div>
             </div>
             {% endif %}
+        </div>
+    </div>
+
+    <!-- AI Agronomist Copilot Floating Trigger Button -->
+    <div class="fixed bottom-6 right-6 z-40">
+        <button 
+            type="button" 
+            id="aiCopilotBtn" 
+            onclick="toggleAiCopilot()" 
+            class="px-5 py-3 rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-2xl shadow-emerald-900/30 flex items-center space-x-2.5 transition-all transform hover:scale-105 active:scale-95 border border-emerald-400/30"
+        >
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-300 animate-ping"></span>
+            <span class="text-base">🤖</span>
+            <span>AI Agronomist Copilot</span>
+        </button>
+    </div>
+
+    <!-- AI Agronomist Copilot Slide-In Drawer -->
+    <div id="aiDrawerBackdrop" onclick="toggleAiCopilot()" class="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-50 transition-opacity hidden"></div>
+
+    <div id="aiDrawer" class="fixed top-0 bottom-0 right-0 w-full sm:w-[440px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col justify-between">
+        <!-- Drawer Header -->
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-emerald-500/20">
+                    🌱
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">AI Agronomist Copilot</h3>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </div>
+                    <p class="text-[10px] text-slate-400">Grounded in your active soil test & prescription</p>
+                </div>
+            </div>
+            <button type="button" onclick="toggleAiCopilot()" class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 text-sm font-bold flex items-center justify-center transition">
+                ✕
+            </button>
+        </div>
+
+        <!-- Grounding Context Banner -->
+        <div class="px-5 py-2.5 bg-emerald-50/60 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between text-[11px] text-emerald-800 dark:text-emerald-300">
+            <span>🌾 <strong>Active Context:</strong> <span id="aiActiveCrop">{{ latest_result.crop_type|default:"Configuring..." }}</span></span>
+            <span class="font-mono text-[10px]">pH: {{ latest_result.soil_ph|default:"6.5" }}</span>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div id="aiChatMessages" class="flex-1 p-5 overflow-y-auto space-y-4 text-xs">
+            <!-- Initial Greeting -->
+            <div class="flex items-start space-x-2.5">
+                <div class="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs flex-shrink-0">
+                    🤖
+                </div>
+                <div class="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 space-y-2 max-w-[85%]">
+                    <p>Hello! I am your <strong>AgriOptima Precision Agronomist</strong>. I have analyzed your soil parameters and prescriptive fertilizer recommendations.</p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Ask me anything about nutrient uptake, split-application timing, soil pH buffering, or organic alternatives below!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suggested Prompt Chips -->
+        <div id="aiSuggestionsBox" class="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-1.5">
+            <span class="text-[10px] font-bold uppercase text-slate-400 block tracking-wider">Quick Inquiries:</span>
+            <div id="aiChipsList" class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="askSuggestedQuestion('Why was this specific ratio of N, P, and K prescribed?')" class="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-slate-600 dark:text-slate-300 text-[11px] transition text-left">
+                    💡 Why this N-P-K ratio?
+                </button>
+                <button type="button" onclick="askSuggestedQuestion('What if heavy rainfall occurs right after fertilizer application?')" class="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-slate-600 dark:text-slate-300 text-[11px] transition text-left">
+                    🌧️ Rain & Leaching impact?
+                </button>
+                <button type="button" onclick="askSuggestedQuestion('Can I mix Urea and DAP together in the same spreader?')" class="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-slate-600 dark:text-slate-300 text-[11px] transition text-left">
+                    🧪 Mixing Urea & DAP?
+                </button>
+                <button type="button" onclick="askSuggestedQuestion('How does soil pH affect my crop fertilizer uptake?')" class="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-slate-600 dark:text-slate-300 text-[11px] transition text-left">
+                    ⚖️ Soil pH & Nutrient Lockout?
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Input Form -->
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <form onsubmit="submitAiMessage(event)" class="relative flex items-center">
+                <input 
+                    type="text" 
+                    id="aiMessageInput" 
+                    placeholder="Ask an agronomic question..." 
+                    autocomplete="off"
+                    class="w-full text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl pl-4 pr-12 py-3 text-slate-800 dark:text-slate-200 font-medium focus:ring-1 focus:ring-emerald-500"
+                >
+                <button type="submit" class="absolute right-2.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition">
+                    Send
+                </button>
+            </form>
         </div>
     </div>
 </div>
@@ -661,5 +834,171 @@
     // Default to Nitrogen curve
     renderCurve('nitrogen', 'rgba(99, 102, 241, 1)', 'Nitrogen in Soil');
     {% endif %}
+
+    // --- 4R Fertilizer Split Application Sowing Date Recalculator ---
+    function onSowingDateChange(sowingDateStr) {
+        if (!sowingDateStr) return;
+        const baseDate = new Date(sowingDateStr);
+        if (isNaN(baseDate.getTime())) return;
+
+        // Update ICS download href
+        const icsBtn = document.getElementById('downloadIcsBtn');
+        if (icsBtn) {
+            const currentHref = icsBtn.getAttribute('href').split('?')[0];
+            icsBtn.setAttribute('href', `${currentHref}?sowing_date=${sowingDateStr}`);
+        }
+
+        // Offsets
+        const crop = "{{ latest_result.crop_type|default:'Wheat' }}";
+        let stage2Days = 28;
+        let stage3Days = 55;
+        if (crop === 'Rice') { stage2Days = 21; stage3Days = 48; }
+        else if (crop === 'Maize') { stage2Days = 30; stage3Days = 60; }
+        else if (crop === 'Cotton') { stage2Days = 35; stage3Days = 70; }
+
+        const labels = document.querySelectorAll('.scheduled-date-label');
+        if (labels.length >= 3) {
+            const formatDate = (d) => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            
+            const d1 = new Date(baseDate);
+            const d2 = new Date(baseDate);
+            d2.setDate(d2.getDate() + stage2Days);
+            const d3 = new Date(baseDate);
+            d3.setDate(d3.getDate() + stage3Days);
+
+            labels[0].textContent = formatDate(d1);
+            labels[1].textContent = formatDate(d2);
+            labels[2].textContent = formatDate(d3);
+        }
+    }
+
+    // --- AI Agronomist Copilot Chat Logic ---
+    let aiContext = JSON.parse('{{ ai_context_json|escapejs }}');
+
+    function toggleAiCopilot() {
+        const drawer = document.getElementById('aiDrawer');
+        const backdrop = document.getElementById('aiDrawerBackdrop');
+        const isClosed = drawer.classList.contains('translate-x-full');
+
+        if (isClosed) {
+            drawer.classList.remove('translate-x-full');
+            backdrop.classList.remove('hidden');
+            setTimeout(() => document.getElementById('aiMessageInput')?.focus(), 250);
+        } else {
+            drawer.classList.add('translate-x-full');
+            backdrop.classList.add('hidden');
+        }
+    }
+
+    function renderAiMarkdown(text) {
+        if (!text) return '';
+        let escaped = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+
+        // Bold **text**
+        escaped = escaped.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        // Bullet points •
+        escaped = escaped.replace(/• (.*?)(?=\n|$)/g, '<li class="ml-3 list-disc">$1</li>');
+        // Linebreaks
+        escaped = escaped.replace(/\n\n/g, '<br/><br/>').replace(/\n/g, '<br/>');
+        return escaped;
+    }
+
+    function appendMessage(sender, text) {
+        const container = document.getElementById('aiChatMessages');
+        const bubble = document.createElement('div');
+        bubble.className = sender === 'user' ? 'flex items-start justify-end space-x-2' : 'flex items-start space-x-2.5';
+
+        if (sender === 'user') {
+            bubble.innerHTML = `
+                <div class="p-3.5 rounded-2xl bg-emerald-600 text-white text-xs max-w-[85%] shadow-sm">
+                    ${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                </div>
+                <div class="w-7 h-7 rounded-xl bg-emerald-700 text-white flex items-center justify-center text-xs flex-shrink-0 font-bold">
+                    You
+                </div>
+            `;
+        } else {
+            bubble.innerHTML = `
+                <div class="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs flex-shrink-0">
+                    🤖
+                </div>
+                <div class="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs space-y-2 max-w-[85%] shadow-sm leading-relaxed">
+                    ${renderAiMarkdown(text)}
+                </div>
+            `;
+        }
+
+        container.appendChild(bubble);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function updateSuggestionChips(chips) {
+        const chipsList = document.getElementById('aiChipsList');
+        if (!chipsList || !chips || chips.length === 0) return;
+
+        chipsList.innerHTML = chips.map(q => `
+            <button type="button" onclick="askSuggestedQuestion('${q.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-500 text-slate-600 dark:text-slate-300 text-[11px] transition text-left">
+                💡 ${q}
+            </button>
+        `).join('');
+    }
+
+    function sendAiQuery(messageText) {
+        appendMessage('user', messageText);
+
+        // Show typing indicator
+        const container = document.getElementById('aiChatMessages');
+        const typingId = 'typing-' + Date.now();
+        const typingElem = document.createElement('div');
+        typingElem.id = typingId;
+        typingElem.className = 'flex items-center space-x-2 text-slate-400 text-xs py-1';
+        typingElem.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> <span>AI Agronomist is analyzing soil physics...</span>`;
+        container.appendChild(typingElem);
+        container.scrollTop = container.scrollHeight;
+
+        fetch('/api/agronomist-chat/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: messageText,
+                context: aiContext
+            })
+        })
+        .then(res => res.json())
+        .then(resData => {
+            const typing = document.getElementById(typingId);
+            if (typing) typing.remove();
+
+            if (resData.success && resData.data) {
+                appendMessage('bot', resData.data.response);
+                if (resData.data.suggestions) {
+                    updateSuggestionChips(resData.data.suggestions);
+                }
+            } else {
+                appendMessage('bot', `Apologies, I encountered an issue: ${resData.error || 'Please try again.'}`);
+            }
+        })
+        .catch(err => {
+            const typing = document.getElementById(typingId);
+            if (typing) typing.remove();
+            appendMessage('bot', 'Network error. Please check your connection and try again.');
+        });
+    }
+
+    function submitAiMessage(e) {
+        e.preventDefault();
+        const input = document.getElementById('aiMessageInput');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        sendAiQuery(text);
+    }
+
+    function askSuggestedQuestion(q) {
+        sendAiQuery(q);
+    }
 </script>
 {% endblock %}

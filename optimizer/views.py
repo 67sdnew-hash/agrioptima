@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from django.shortcuts import render, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
@@ -11,12 +12,16 @@ from .forms import SoilOptimizationForm
 from .services.optimization import optimize_fertilizer, generate_response_curves
 from .services.pdf_generator import generate_agronomist_pdf, calculate_commercial_bags
 from .services.weather import fetch_weather_forecast, DEFAULT_PRESETS
+from .services.split_schedule import calculate_split_schedule, generate_ics_calendar, get_google_calendar_url
+from .services.ai_agronomist import answer_agronomic_query
 
 
 def dashboard_view(request):
     latest_result = None
     response_curves = None
     commercial_bags = None
+    split_schedule = None
+    ai_context = {}
 
     if request.method == 'POST':
         form = SoilOptimizationForm(request.POST)
@@ -80,6 +85,45 @@ def dashboard_view(request):
                     float(opt_res['delta_k'])
                 )
 
+                # Compute 4R Split Application Schedule
+                sowing_date = datetime.now()
+                split_schedule = calculate_split_schedule(
+                    crop_type=crop_type,
+                    sowing_date=sowing_date,
+                    urea_bags=commercial_bags['urea_bags'],
+                    dap_bags=commercial_bags['dap_bags'],
+                    mop_bags=commercial_bags['mop_bags'],
+                    delta_n_kg=opt_res['delta_n'],
+                    delta_p_kg=opt_res['delta_p'],
+                    delta_k_kg=opt_res['delta_k']
+                )
+
+                # Attach Google Calendar links to each stage
+                for stage in split_schedule:
+                    desc = f"{stage['title']} for {crop_type}: {stage['application_method']} ({stage['rationale']})"
+                    stage['google_cal_url'] = get_google_calendar_url(
+                        f"Fertilizer Stage {stage['stage_number']} ({crop_type})",
+                        stage['iso_date'],
+                        desc
+                    )
+
+                ai_context = {
+                    'crop_type': crop_type,
+                    'current_nitrogen': current_n,
+                    'current_phosphorus': current_p,
+                    'current_potassium': current_k,
+                    'soil_ph': ph,
+                    'rainfall': rainfall,
+                    'target_yield': target_yield,
+                    'delta_nitrogen': opt_res['delta_n'],
+                    'delta_phosphorus': opt_res['delta_p'],
+                    'delta_potassium': opt_res['delta_k'],
+                    'urea_bags': commercial_bags['urea_bags'],
+                    'dap_bags': commercial_bags['dap_bags'],
+                    'mop_bags': commercial_bags['mop_bags'],
+                    'savings': opt_res['cost_savings']
+                }
+
                 latest_result = record
                 messages.success(request, "Prescriptive fertilizer optimization calculated successfully!")
 
@@ -101,10 +145,59 @@ def dashboard_view(request):
         'form': form,
         'latest_result': latest_result,
         'commercial_bags': commercial_bags,
+        'split_schedule': split_schedule,
         'response_curves_json': json.dumps(response_curves) if response_curves else None,
         'weather_presets': DEFAULT_PRESETS,
+        'ai_context_json': json.dumps(ai_context) if ai_context else "{}",
+        'today_iso': datetime.now().strftime('%Y-%m-%d'),
     }
     return render(request, 'optimizer/dashboard.html', context)
+
+
+def export_ics_calendar_view(request, record_id: int):
+    """Generates an RFC 5545 .ics iCalendar file for the 4R split-application schedule."""
+    record = get_object_or_404(OptimizationRecord, id=record_id)
+    comm = calculate_commercial_bags(record.delta_nitrogen, record.delta_phosphorus, record.delta_potassium)
+    
+    date_str = request.GET.get('sowing_date')
+    try:
+        sowing_date = datetime.strptime(date_str, '%Y-%m-%d') if date_str else datetime.now()
+    except ValueError:
+        sowing_date = datetime.now()
+
+    ics_content = generate_ics_calendar(
+        crop_type=record.crop_type,
+        sowing_date=sowing_date,
+        urea_bags=comm['urea_bags'],
+        dap_bags=comm['dap_bags'],
+        mop_bags=comm['mop_bags'],
+        delta_n_kg=record.delta_nitrogen,
+        delta_p_kg=record.delta_phosphorus,
+        delta_k_kg=record.delta_potassium
+    )
+
+    response = HttpResponse(ics_content, content_type='text/calendar; charset=utf-8')
+    filename = f"AgriOptima_Schedule_{record.crop_type}_AGRI{record.id}.ics"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@csrf_exempt
+@require_POST
+def agronomist_chat_api_view(request):
+    """API endpoint providing real-time AI Agronomist Copilot advisory."""
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+        message = payload.get('message', '').strip()
+        context = payload.get('context', {})
+
+        if not message:
+            return JsonResponse({'error': 'Message cannot be empty.'}, status=400)
+
+        result = answer_agronomic_query(message, context)
+        return JsonResponse({'success': True, 'data': result})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
 def export_pdf_report_view(request, record_id: int):

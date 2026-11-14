@@ -226,3 +226,97 @@ class FertilizerOptimizationTests(TestCase):
         self.assertGreater(data['summary']['total_savings_usd'], 0.0)
         self.assertEqual(data['geojson']['type'], 'FeatureCollection')
         self.assertEqual(len(data['geojson']['features']), 2)
+
+    def test_split_schedule_and_ics_export(self):
+        record = OptimizationRecord.objects.create(
+            crop_type='Wheat',
+            current_nitrogen=40.0,
+            current_phosphorus=20.0,
+            current_potassium=30.0,
+            soil_ph=6.5,
+            rainfall=750.0,
+            target_yield=6.0,
+            baseline_yield=3.8,
+            predicted_yield=6.1,
+            delta_nitrogen=25.0,
+            delta_phosphorus=15.0,
+            delta_potassium=20.0,
+            total_fertilizer_kg=60.0,
+            optimized_cost=70.5,
+            blanket_cost=270.0,
+            cost_savings=199.5,
+            percent_savings=73.9,
+            is_feasible=True
+        )
+
+        from optimizer.services.split_schedule import calculate_split_schedule, generate_ics_calendar
+        from datetime import datetime
+
+        schedule = calculate_split_schedule(
+            crop_type='Wheat',
+            sowing_date=datetime.now(),
+            urea_bags=3.0,
+            dap_bags=2.0,
+            mop_bags=1.5,
+            delta_n_kg=25.0,
+            delta_p_kg=15.0,
+            delta_k_kg=20.0
+        )
+        self.assertEqual(len(schedule), 3)
+        self.assertEqual(schedule[0]['stage_number'], 1)
+        self.assertEqual(schedule[1]['stage_number'], 2)
+        self.assertEqual(schedule[2]['stage_number'], 3)
+
+        ics_text = generate_ics_calendar(
+            crop_type='Wheat',
+            sowing_date=datetime.now(),
+            urea_bags=3.0,
+            dap_bags=2.0,
+            mop_bags=1.5,
+            delta_n_kg=25.0,
+            delta_p_kg=15.0,
+            delta_k_kg=20.0
+        )
+        self.assertIn("BEGIN:VCALENDAR", ics_text)
+        self.assertIn("BEGIN:VEVENT", ics_text)
+        self.assertIn("END:VCALENDAR", ics_text)
+
+        # Test ICS View
+        res_ics = self.client.get(reverse('export_ics_calendar', args=[record.id]))
+        self.assertEqual(res_ics.status_code, 200)
+        self.assertIn('text/calendar', res_ics['Content-Type'])
+        self.assertIn('.ics', res_ics['Content-Disposition'])
+
+    def test_ai_agronomist_chat_api(self):
+        payload = {
+            'message': 'Why did you recommend this amount of Potassium for wheat?',
+            'context': {
+                'crop_type': 'Wheat',
+                'current_nitrogen': 40.0,
+                'current_phosphorus': 20.0,
+                'current_potassium': 30.0,
+                'soil_ph': 6.5,
+                'rainfall': 750.0,
+                'target_yield': 6.0,
+                'delta_nitrogen': 20.0,
+                'delta_phosphorus': 12.0,
+                'delta_potassium': 25.0,
+                'urea_bags': 2.5,
+                'dap_bags': 1.8,
+                'mop_bags': 1.5,
+                'savings': 180.0
+            }
+        }
+
+        response = self.client.post(
+            reverse('agronomist_chat_api'),
+            data=json.dumps(payload),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertIn('response', data['data'])
+        self.assertIn('Potassium', data['data']['response'])
+        self.assertGreaterEqual(len(data['data']['suggestions']), 1)
